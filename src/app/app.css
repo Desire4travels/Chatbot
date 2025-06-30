@@ -1,0 +1,77 @@
+.main-container {
+  padding: 1rem;
+  max-width: 36rem;
+  margin: 0 auto;
+}
+
+.heading {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.question {
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.input {
+  width: 100%;
+  border: 1px solid #ccc;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.button {
+  background: #2563eb;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-right: 0.5rem;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.loading {
+  color: #2563eb;
+  margin-top: 1rem;
+}
+
+.error {
+  color: #dc2626;
+  margin-top: 1rem;
+}
+
+.itinerary-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+}
+
+.itinerary-box {
+  margin-top: 1rem;
+  background: #f3f4f6;
+  color: #111;
+  padding: 1rem;
+  border-radius: 8px;
+  white-space: pre-wrap;
+}
+
+.back-button {
+  margin-top: 1.5rem;
+  background: #374151;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+}
