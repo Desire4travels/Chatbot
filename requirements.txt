@@ -1,0 +1,16 @@
+numpy
+pandas
+openpyxl
+python-dotenv
+
+langchain
+langchain-core
+langchain-community
+langchain-openai
+langchain-huggingface
+langchain-text-splitters
+
+faiss-cpu
+sentence-transformers
+torch
+transformers
