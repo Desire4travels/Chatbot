@@ -14,19 +14,19 @@ export default function Home() {
 
   const questions = [
     "How many people are traveling?",
-    "What are the age groups (kids, adults, seniors)?",
-    "What are your travel dates (tentative or fixed)?",
-    "Where are you starting from (pickup location)?",
-    "What is your destination or preferred route?",
-    "Is it a round trip or one-way?",
+    //"What are the age groups (kids, adults, seniors)?",
+    //"What are your travel dates (tentative or fixed)?",
+    //"Where are you starting from (pickup location)?",
+    "What is your destination city or preferred route?",
+    //"Is it a round trip or one-way?",
     "How many days do you want the trip to be?",
-    "What type of stay do you prefer?",
-    "Private cab, shared vehicle, self-drive, or public transport?",
-    "Vehicle type preference? (Sedan, SUV, Tempo Traveller)",
+    //"What type of stay do you prefer?",
+    //"Private cab, shared vehicle, self-drive, or public transport?",
+    //"Vehicle type preference? (Sedan, SUV, Tempo Traveller)",
     "Are you looking for a relaxing trip or an adventurous one?",
-    "What kind of experiences do you prefer?",
-    "What is your approximate budget (per person or total)?",
-    "Any specific destinations, places, or activities you want to include?",
+    //"What kind of experiences do you prefer?",
+    //"What is your approximate budget (per person or total)?",
+    //"Any specific destinations, places, or activities you want to include?",
   ];
 
   const handleSubmit = async () => {
