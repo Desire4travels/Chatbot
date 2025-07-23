@@ -13,20 +13,18 @@ export default function Home() {
   const [error, setError] = useState("");
 
   const questions = [
-    "How many people are traveling?",
-    //"What are the age groups (kids, adults, seniors)?",
-    //"What are your travel dates (tentative or fixed)?",
-    //"Where are you starting from (pickup location)?",
-    "What is your destination city or preferred route?",
-    //"Is it a round trip or one-way?",
-    "How many days do you want the trip to be?",
-    //"What type of stay do you prefer?",
-    //"Private cab, shared vehicle, self-drive, or public transport?",
-    //"Vehicle type preference? (Sedan, SUV, Tempo Traveller)",
-    "Are you looking for a relaxing trip or an adventurous one?",
-    //"What kind of experiences do you prefer?",
-    //"What is your approximate budget (per person or total)?",
-    //"Any specific destinations, places, or activities you want to include?",
+    "List how many kids, adults and seniors are travelling?",
+    "What are your tentative travel dates?",
+    "Where are you starting from (pickup location)?",
+    "What is your destination city or preferred route?", //give multiple adds (+ add another city)
+    "Is it a round trip or one-way?",//dropdown/mcq
+    "How many days do you want the trip to be?",//number option no. of days, no. of nights
+    "What type of stay do you prefer?",//options in mcq& multiple selects- camping, hotel, resorts, homestays 
+    "What type of transport you would prefer?",//options in mcq& multiple selects- Private cab, shared vehicle, self-drive, public transport
+    "What type of trip are you looking for?",//options in mcq& multiple select- relax/leisure, adventure, pligrimage, couple.
+    "What is your total approximate budget for the trip?",
+    "Any specific destinations, activities you want to include?",
+    "Any other preferences or special requests?",
   ];
 
   const handleSubmit = async () => {

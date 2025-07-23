@@ -1,6 +1,8 @@
 import * as dotenv from "dotenv";
 dotenv.config();
 
+console.log("GEMINI_API_KEY:", process.env.GEMINI_API_KEY);
+
 export async function getGeminiEmbedding(text: string): Promise<number[]> {
     const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/embedding-001:embedContent?key=${process.env.GEMINI_API_KEY}`,
