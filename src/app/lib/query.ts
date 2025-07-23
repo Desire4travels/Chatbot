@@ -1,66 +1,66 @@
 import { initPinecone } from "./pineconeClient";
 import { getGeminiEmbedding } from "./embed";
 
-export async function queryServicesByCity(userText: string, pickupCity: string, targetCity: string) {
+// --- CHANGE: The function now accepts an array of strings for targetCities ---
+export async function queryServicesByCity(userText: string, pickupCity: string, targetCities: string[]) {
     const index = await initPinecone();
     const embedding = await getGeminiEmbedding(userText);
 
     if (!embedding.length) return null;
 
-    // ✅ Query each namespace separately with appropriate filters
+    // --- CHANGE: All filters now use the `$in` operator to match any city in the targetCities array ---
     const [busResults, cabResults, hotelResults, adventureResults] = await Promise.all([
-        // Bus: Filter by both pickup and target city
+        // Bus: Filter by pickup city AND all destination cities
         index.namespace('bus').query({
             vector: embedding,
             topK: 50,
             includeMetadata: true,
             filter: {
-                city: { $in: [pickupCity.trim(), targetCity.trim()] }
+                // The city can be the pickup city OR any of the destination cities
+                city: { $in: [pickupCity.trim(), ...targetCities] }
             }
         }),
 
-        // Cab: Filter only by target city
+        // Cab: Filter by any of the destination cities
         index.namespace('cab').query({
             vector: embedding,
             topK: 50,
             includeMetadata: true,
             filter: {
-                city: targetCity.trim()
+                city: { $in: targetCities }
             }
         }),
 
-        // Hotel: Filter only by target city
+        // Hotel: Filter by any of the destination cities
         index.namespace('hotel').query({
             vector: embedding,
             topK: 50,
             includeMetadata: true,
             filter: {
-                city: targetCity.trim()
+                city: { $in: targetCities }
             }
         }),
 
-        // Adventure: Filter only by target city  
+        // Adventure: Filter by any of the destination cities
         index.namespace('adventure').query({
             vector: embedding,
             topK: 50,
             includeMetadata: true,
             filter: {
-                city: targetCity.trim()
+                city: { $in: targetCities }
             }
         })
     ]);
 
-    // ✅ Extract matches from each result
     const buses = busResults.matches || [];
     const cabs = cabResults.matches || [];
     const hotels = hotelResults.matches || [];
     const adventures = adventureResults.matches || [];
 
-    // ✅ Debug logging
     console.log(`🔍 Query Debug:`, {
         userText,
         pickupCity,
-        targetCity,
+        targetCities, // Log the array
         results: {
             buses: buses.length,
             cabs: cabs.length,
@@ -69,13 +69,9 @@ export async function queryServicesByCity(userText: string, pickupCity: string, 
         }
     });
 
-    // ✅ Log first result from each to check data structure
-    if (buses.length > 0) console.log('Bus sample:', buses[0].metadata);
-    if (cabs.length > 0) console.log('Cab sample:', cabs[0].metadata);
-    if (hotels.length > 0) console.log('Hotel sample:', hotels[0].metadata);
-    if (adventures.length > 0) console.log('Adventure sample:', adventures[0].metadata);
+    // The rest of this file (building context and returning results) remains the same
+    // as it correctly processes the combined query results.
 
-    // ✅ Build combined response
     const ragContext = `
 🚌 Bus Options (${buses.length} found):
 ${buses.map((m: any) =>
@@ -98,7 +94,6 @@ ${adventures.map((m: any) =>
     ).join("\n") || "No activities found."}
 `;
 
-    // ✅ Combine all matches
     const allMatches = [...buses, ...cabs, ...hotels, ...adventures];
 
     return {
