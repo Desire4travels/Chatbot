@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     }
 
     // --- All this logic is correct for preparing the city arrays ---
-    const rawCityResponse = responses["What is your destination city or preferred route?"];
+    const rawCityResponse = responses["Where do you want to go ? Add all the locations that you are planning to visit(you can select multiple options)."];
     const rawCitiesArray = Array.isArray(rawCityResponse) ? rawCityResponse : [rawCityResponse];
 
     const targetCities = rawCitiesArray
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
       .filter(city => city !== '')
       .map(city => capitalizeFirstLetter(city));
 
-    const rawPickupCityResponse = responses["Where are you starting from (pickup location)?"];
+    const rawPickupCityResponse = responses["From which location are you starting your trip?"];
     const pickupCityString = Array.isArray(rawPickupCityResponse) ? rawPickupCityResponse[0] : rawPickupCityResponse;
     const pickupCity = capitalizeFirstLetter(pickupCityString || '');
 
@@ -39,80 +39,68 @@ export async function POST(req: Request) {
     // --- CHANGE: Create a human-readable string for the prompt ---
     const targetCityForPrompt = targetCities.join(', ');
 
+
     // 5. Construct prompt
-    const prompt = `
-You are an expert travel planner bot for "Desire4Travels". Your primary goal is to generate a highly detailed, practical, and personalized travel itinerary.
+    const prompt = `You are an expert travel planner bot for "Desire4Travels". Your primary goal is to generate a highly detailed, practical, and personalized travel itinerary using the rules and data below.
 
-// [ACTION: Clearly define the two separate roles for the AI: Planner vs. Vendor Lister]
-**Your Core Task has two parts:**
-1.  **Itinerary Generation:** Use your own extensive knowledge of **${targetCityForPrompt}** to create a rich, day-by-day plan. Suggest famous landmarks, hidden gems, logical routes, and types of activities (e.g., "visit a historical fort," "try scuba diving," "explore the local markets"). The quality and detail of the itinerary itself should NOT be limited by the context below.
-2.  **Vendor Integration:** The "Context from our vendor database" is your ONLY source for specific business names, contacts, and services. When you suggest an activity in the itinerary that matches a service in the context (e.g., you suggest scuba diving and the context has a scuba vendor), you MUST mention that vendor from the context. If the context is empty or lacks a relevant vendor for a suggested activity, simply describe the activity generically (e.g., "Find a local guide for a city tour") and note in the "Service Providers" section that no specific vendor was available in the database.
+**CORE INSTRUCTIONS**
 
-// [ACTION: Provide specific instructions for personalization to address problem #3]
-**Personalization Rules:**
-* **Pacing:** You MUST adjust the pace of the itinerary based on the travelers' details. For trips with seniors or young children, suggest fewer activities per day with more leisure time. For adventurous adults, create a more packed schedule.
-* **Logistics:** Be a smart planner. Include suggestions for meal times (e.g., "Lunch at a beach shack near Baga," "Dinner in the historic city center"). Acknowledge travel time between locations.
-* **Interests:** Tailor the *types* of activities to the user's declared trip type (e.g., adventurous, relaxing, family).
+1.  **Itinerary Generation:** Use your extensive knowledge of **${targetCityForPrompt}** to create a rich, day-by-day plan. Suggest famous landmarks, hidden gems, logical routes, and types of activities.
 
-**User's Trip Details:**
+2.  **Vendor Integration:** The "VENDOR CONTEXT" provided is your **only** source for specific business names.
+    * **If a suggested activity matches a vendor**, you MUST mention that vendor.
+    * **If no relevant vendor exists**, describe the activity generically and state: "For bookings, connect with the Desire4Travels Team at +91 79770 22583."
+
+3.  **Personalization Rules:**
+    * **Pacing:** Adjust the itinerary's pace for the specific travelers (e.g., relaxed for seniors, packed for adventurers).
+    * **Logistics:** Verify location opening times. Include travel time and meal suggestions.
+    * **Transportation:** Recommend transport based on distance (<5km: walk/auto, 5-15km: cab/auto, >15km: bus/train, >500km: flight).
+
+4.  **CRITICAL Formatting Rules:**
+    * a. You MUST generate **compact Markdown** with **NO unnecessary blank lines**. Use single newlines for list items and double newlines only between major sections (like Day 1 and Day 2).
+    * b. **SUBHEADING STYLE: Every subheading MUST be bolded using double asterisks.** This applies to parts like "**Morning (Time):**", "**Lunch (Time):**", "**Bus Options:**", etc.
+    * c. Do not add any conversational summaries or concluding remarks.
+
+---
+**USER TRIP DETAILS:**
 ${JSON.stringify(responses, null, 2)}
 
-**Context from our vendor database:**
+---
+**VENDOR CONTEXT:**
 ${context}
 
-**Required Output Format:**
-**CRITICAL OUTPUT DIRECTIVE: Compact & Attractive Formatting**
-You MUST generate **compact Markdown**. The output should be dense and easy to read, like a summary in a travel app.
-* **ELIMINATE ALL UNNECESSARY BLANK LINES.**
-* Use a single newline to separate items in a list.
-* Use a double newline ONLY to separate major, distinct sections (like separating the full 'Day 1' block from the 'Day 2' block, please dont leave a lot of blank space in between).
-* Do NOT put blank lines between a heading and the list that follows it.
-
-// [ACTION: Explicitly request detailed, structured sections to control output.]
-Generate the response in the following structured sections.
+---
+**YOUR RESPONSE STARTS HERE. FOLLOW ALL RULES, ESPECIALLY THE BOLDING AND SPACING. STRUCTURE YOUR OUTPUT EXACTLY LIKE THIS:**
 
 **Desire4Travels: Your Custom Itinerary for ${targetCityForPrompt}**
 
 **Detailed Day-by-Day Itinerary**
-// [ACTION: Guide the model on how to structure the daily plan for better detail. Try giving about 4 activities per day, with a mix of morning, afternoon, and evening suggestions. Include travel details]
-// [Action: Make sure the usesr gets enough info from each activity point you show, not less not a lot just adequate. A smart travel planner would put in 2 to 3 lines for each activity, not just a single line.]
-(For each day, provide a thoughtful schedule. Follow this compact example:
-**Day 1: Arrival and Settling In**
-* **Morning:** Depart from ${pickupCity}. If a bus vendor is in the context, mention them.
-* **Afternoon:** Arrive in ${targetCityForPrompt}, travel to your hotel. Consider check-in times.
-* **Evening:** Suggest a relaxing first-night activity like a short walk or dinner near the hotel.
 
-**Day 2: North Goa Adventure**
-* **Morning (9 AM - 1 PM):** Visit Calangute Beach. For travel, consider hiring a cab from Goa Rides (Contact: Cristiano Dsouza).
-* **Lunch (1 PM - 2 PM):** Enjoy a meal at one of the many beach shacks.
-* **Afternoon (2 PM - 5 PM):** Head to Baga Beach for water sports. You can book an experience with Ocean Thrill (Contact: Meera Pillai).
-* **Evening:** Watch the sunset from Vagator Hill and explore nearby cafes for dinner.)
-* **night:** Go to club cubana for a night out, check out the kareoke night at Tito's near baga beach.
+**Day 1: [Day 1 Theme]**
+* **Morning (Time):** [Activity description in 2-3 lines.]
+* **Lunch (Time):** [Meal suggestion.]
+* **Afternoon (Time):** [Activity description in 2-3 lines.]
+* **Evening (Time):** [Activity description in 2-3 lines.]
+
+**Day 2: [Day 2 Theme]**
+* **Morning (Time):** [Activity description in 2-3 lines.]
+* **Lunch (Time):** [Meal suggestion.]
+* **Afternoon (Time):** [Activity description in 2-3 lines.]
+* **Evening (Time):** [Activity description in 2-3 lines.]
+(Continue for all days of the trip)
 
 **Service Provider Details**
-// [ACTION: Force the model to use the context strictly for this section and handle missing data gracefully.]
-(List ALL relevant providers from the context. If a category is empty, explicitly state that. **Keep the list tight.**)
 
 * **Bus Options:**
-    * **In ${pickupCity}:** [List vendors from context or state "No specific vendors found in our database."]
-    * **In ${targetCityForPrompt}:** [List vendors from context or state "No specific vendors found in our database."]
-
+    * **In ${pickupCity}:** [List vendors or state "No specific vendors found..."]
+    * **In ${targetCityForPrompt}:** [List vendors or state "No specific vendors found..."]
 * **Hotel Options:**
-    * [List all hotel vendors from context with all their details or state "No specific vendors found in our database."]
-
+    * [List vendors or state "No specific vendors found..."]
 * **Cab Services:**
-    * [List all cab vendors from context with all their details or state "No specific vendors found in our database."]
-
+    * [List vendors or state "No specific vendors found..."]
 * **Activities:**
-    * [List all activity vendors from context with all their details or state "No specific vendors found in our database."]
-
-// [ACTION: Provide strict formatting rules to prevent unwanted blank spaces - solves problem #1]
-**Formatting Guidelines:**
-* Use single line breaks for list items.
-* Use double line breaks ONLY to separate major sections (e.g., between "Day 1" and "Day 2", or between the Itinerary and Service Providers).
-* Do not include any concluding notes or disclaimers that are not part of the requested structure.
+    * [List vendors or state "No specific vendors found..."]
 `;
-
     // The rest of the file is standard and correct.
     const result = await fetch(
       `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,

@@ -7,7 +7,7 @@ body {
 }
 
 .main-container {
-  max-width: 600px;
+  max-width: 800px;
   margin: auto;
   padding: 2rem;
   text-align: center;
@@ -25,30 +25,71 @@ body {
   color: #555;
 }
 
-.progress-bar-wrapper {
+.progress-container {
+  width: 100%;
+  max-width: 500px;
+  margin: 2rem auto;
+  text-align: center;
+}
+
+.progress-bar-outer {
+  height: 22px;
+  background: #dfe6e9;
+  border-radius: 999px;
+  overflow: hidden;
   position: relative;
-  background: #ddd;
-  border-radius: 8px;
-  height: 10px;
-  margin: 20px 0;
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
-.progress-bar {
-  background-color: #00796b;
+.progress-bar-inner {
   height: 100%;
-  border-radius: 8px;
-  transition: width 0.4s ease;
+  background: linear-gradient(90deg, #00b894, #00cec9);
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 10px;
+  color: white;
+  font-weight: bold;
+  position: relative;
+  transition: width 0.6s ease-in-out;
+  animation: glow 1.5s infinite ease-in-out;
 }
 
-.progress-label {
-  font-size: 0.9rem;
-  color: #333;
-  margin-top: 5px;
-  text-align: right;
+@keyframes glow {
+  0% {
+    box-shadow: 0 0 4px #00cec9;
+  }
+
+  50% {
+    box-shadow: 0 0 12px #00cec9;
+  }
+
+  100% {
+    box-shadow: 0 0 4px #00cec9;
+  }
 }
+
+.progress-float-label {
+  font-size: 0.85rem;
+  position: relative;
+  right: 5px;
+  background: rgba(0, 0, 0, 0.15);
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.progress-subtext {
+  margin-top: 6px;
+  font-size: 0.95rem;
+  color: #555;
+  letter-spacing: 0.5px;
+}
+
 
 .question-card,
 .result-card {
+  min-height: 200px;
   background-color: #ffffffcc;
   padding: 1.5rem;
   border-radius: 12px;
@@ -63,12 +104,12 @@ body {
 }
 
 .input {
+  padding: 8px 12px;
+  font-size: 1rem;
+  margin-top: 1rem;
   width: 100%;
-  padding: 0.7rem;
   border: 1px solid #ccc;
   border-radius: 8px;
-  margin-bottom: 1rem;
-  font-size: 1rem;
 }
 
 .button,
@@ -164,88 +205,212 @@ body {
   text-decoration: underline;
 }
 
-/* ================================================= */
-/* === CSS to Reduce Whitespace in Itinerary Box === */
-/* ================================================= */
 
-/* Target any heading (like the Day 1, Day 2 titles) */
-.itinerary-box h1,
-.itinerary-box h2,
-.itinerary-box h3,
-.itinerary-box h4,
-.itinerary-box h5,
-.itinerary-box h6 {
-  /* Remove the default top margin that browsers add */
-  margin-top: 0;
-  /* Add a smaller, controlled space below the heading */
-  margin-bottom: 0.5rem;
+.counter-group {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+  justify-content: start;
 }
 
-/* Target any paragraph */
-.itinerary-box p {
-  /* Remove default top/bottom margins from paragraphs */
-  margin-top: 0;
-  margin-bottom: 0.75rem;
-  /* A little space after each paragraph */
+.counter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #f3f4f6;
+  padding: 0.5rem;
+  border-radius: 8px;
+  width: 100px;
+  font-size: 0.85rem;
 }
 
-/* Target any bulleted list */
-.itinerary-box ul {
-  /* Remove top/bottom margins from the entire list */
-  margin-top: 0;
+.counter-label {
+  font-weight: 500;
+  margin-bottom: 0.3rem;
+}
+
+.counter-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.counter-btn {
+  background-color: #e0e0e0;
+  border: none;
+  padding: 2px 6px;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.counter-value {
+  min-width: 20px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+
+
+
+/* Reusable container to center child elements vertically and horizontally */
+.center-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1rem;
+  gap: 1rem;
+}
+
+/* Center group layout for dual inputs like Days/Nights */
+.center-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 3rem;
+}
+
+/* Smaller input style with centered alignment */
+.input.centered {
+  width: 120px;
+  text-align: center;
+}
+
+/* Force city inputs and text input to be visually consistent and centered */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+/* Optional: limit width of input if needed */
+.input-group .input {
+  width: 200px;
+}
+
+/* Ensure button is centered if it's below inputs */
+.button.secondary.centered {
+  margin: 0 auto;
+}
+
+
+
+
+.summary-card {
+  background-color: #ffffffcc;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin-top: 1.5rem;
+  text-align: center;
+  max-width: 700px;
+  margin-inline: auto;
+}
+
+.summary-card h2 {
+  font-size: 1.4rem;
   margin-bottom: 1rem;
-  /* Space after the whole list of bullets */
-  /* Keep the left padding so the bullet points are indented */
-  padding-left: 24px;
+  color: #00796b;
 }
 
-/* Target individual list items (the bullets) */
-.itinerary-box li {
-  /* Add a tiny bit of space between each bullet point for readability */
-  margin-bottom: 0.5rem;
+.summary-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.6rem;
 }
 
-/* This is a useful override to ensure the first element has no top margin */
-.itinerary-box>*:first-child {
-  margin-top: 0 !important;
+.summary-item {
+  background: #f4f4f4;
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  text-align: left;
+  line-height: 1.3;
+  gap: 0.5rem;
 }
 
-/* And the last element has no bottom margin */
-.itinerary-box>*:last-child {
-  margin-bottom: 0 !important;
+.summary-item strong {
+  color: #333;
+  flex-shrink: 0;
+  width: 45%;
 }
 
-/* ======================================================== */
-/* === ADD-ON CSS: Tighter Space After Headings          === */
-/* ======================================================== */
-/* Add this to your app.css file to remove space between titles and content. */
-
-
-/* This is the key rule. It selects any element (*) that comes
-   IMMEDIATELY AFTER a heading (like h2, h3) and removes the
-   unwanted space above it. */
-.itinerary-box h2+*,
-.itinerary-box h3+*,
-.itinerary-box h4+* {
-  margin-top: 0;
-}
-
-/* This targets lists that come after a paragraph.
-   This is useful for the "Service Provider" section where
-   "Bus Options:" might be a bold paragraph (<p><strong>...</strong></p>). */
-.itinerary-box p+ul {
-  margin-top: 0.25rem;
-  /* A tiny bit of space is nice here */
+.summary-item span {
+  flex-grow: 1;
+  color: #555;
+  word-break: break-word;
 }
 
 
-/* Let's also ensure the headings themselves have a consistent,
-   small margin below them. You can adjust these values. */
-.itinerary-box h2,
-/* For "Detailed Day-by-Day Itinerary" */
-.itinerary-box h3,
-/* For "Day 1", "Day 2", etc. */
-.itinerary-box h4 {
-  margin-bottom: 0.5rem;
-  /* This controls the space *after* the heading title */
+
+.summary-item {
+  margin-bottom: 1rem;
+}
+
+.summary-item input {
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 3rem;
+}
+
+.loader {
+  border: 6px solid #e0e0e0;
+  border-top: 6px solid #00cec9;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-text {
+  font-size: 1.1rem;
+  color: #444;
+  font-weight: 500;
+}
+
+
+.option.small {
+  font-size: 0.9rem;
+  /* smaller text */
+  padding: 12px 24px;
+  margin: 4px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.option.small.selected {
+  background-color: #eef6ff;
+  border-color: #007bff;
+}
+
+.option-group.small {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
