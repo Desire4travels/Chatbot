@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import ReactMarkdown from 'react-markdown';
 
 import axios from "axios";
 import "./app.css";
@@ -29,12 +30,12 @@ const questions: string[] = [
   "How many people are going for the trip?",
   "When are you planning for the trip?",
   "From which location are you starting your trip?",
-  "Where do you want to go ? Add all the locations that you are planning to visit(you can select multiple options).",
+  "Where do you want to go? Add all the locations that you are planning to visit (you can select multiple options).",
   "Is it a round trip or one-way?",
   "For how many days are you planning for this trip? Days/Nights",
-  "What type of stay do you prefer(you can select multiple options)?",
-  "What type of transport you would prefer(you can select multiple options)?",
-  "What type of trip are you looking for(you can select multiple options)?",
+  "What type of stay do you prefer (you can select multiple options)?",
+  "What type of transport you would prefer (you can select multiple options)?",
+  "What type of trip are you looking for (you can select multiple options)?",
   "What is your total approximate budget for the trip?",
   "Any specific destinations, activities you want to include?",
   "Any other preferences or special requests?",
@@ -309,8 +310,8 @@ export default function Home() {
                   <label
                     key={opt}
                     className={`option small  ${responses[step as keyof StepResponses] === opt
-                        ? "selected"
-                        : ""
+                      ? "selected"
+                      : ""
                       }`}
                   >
                     <input
@@ -759,7 +760,11 @@ export default function Home() {
       {itinerary && (
         <div className="result-card">
           <h2>🗺️ Your Trip Itinerary</h2>
-          <pre className="itinerary-box">{itinerary}</pre>
+          <div className="itinerary-box markdown-body">
+            <ReactMarkdown>
+              {itinerary}
+            </ReactMarkdown>
+          </div>
           <button className="button" onClick={handleBackToStart}>
             🔄 Plan Another Trip
           </button>
