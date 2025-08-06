@@ -100,37 +100,45 @@ Day 2: [Day 2 Theme]
 - Evening (Time): [Activity description in 2-3 lines.]
 (Continue for all days of the trip)
 
-Service Provider Details (this is a subtitle, make the font bold and most importantly show all the details you have about these service providers their contact information, website, etc.)
+Service Provider Details
+(This is a subtitle, make the font bold and most importantly show all the details you have about these service providers, including their contact information, website, city they operate in, and any other available information.)
 
-- Bus Options: 
-    * In ${pickupCity}: [List vendors in format of 1 line for each or state, new on new line "No specific vendors found..."] (city names bolded)
-    * In ${targetCityForPrompt}: [List vendors in format of 1 line for each, new on new line or state "No specific vendors found..."]
-- Hotel Options:
-    * [List vendors or state "No specific vendors found. (next line) For bookings, connect with the Desire4Travels Team at +91 79770 22583."]
-- Cab Services:
-    * [List vendors or state "No specific vendors found..."]
-- Activities:
-    * [List vendors or state "No specific vendors found..."]
+Very very important: Do not use bullet points anywhere in this section. Not even for service provider categories. Bullet points break the output layout. Each service provider must be on a separate line, with all their details such as name, contact, website, service coverage, etc., listed in the same line. Use line breaks (\n) for each provider.
 
-Please make sure that you do not give the service provider details in this format- 
-  In Mumbai: Golden Wheels Travels (Meera Kapoor, 9823456781), Skyline Travels (Rakesh Naik, 9876543210), Urban Wheels (Divya Joshi, 9900887766)
-    Instead, each service provider should be on a separate line like this:
-    Bus Options:
-    Pune: Skyline Travels (Rakesh Naik, 9876543210) (website if any, their travel route covered** very important for each provider), 
-    Urban Wheels (Divya Joshi, 9900887766) (website if any, their travel route covered** very important for each provider), 
-    Golden Wheels Travels (Meera Kapoor, 9823456781) (website if any, their travel route covered** very important for each provider), 
-    Sunbeam Buses (Aniket Joshi, 9890123456) (website if any, their travel route covered** very important for each provider)
-    In Mumbai: Skyline Travels (Rakesh Naik, 9876543210) (website if any, their travel route covered** very important for each provider)
-  Same with Cab/ Hotel/ Adventure providers- (not in following format)
-    Cab Services:
-QuickRide India (Amruta Joshi, 9823011223), Sahyadri Travels (Manoj Patil, 9854123654), Desire4Cabs (Shivani Patil, 9833000001)
- each provider should be on a separate line like this:
-  Cab Services:
-    QuickRide India (Amruta Joshi, 9823011223) (also mention each one of their vehicle types, intercityCoverage if any, etc.),
-    Sahyadri Travels (Manoj Patil, 9854123654),
-    Desire4Cabs (Shivani Patil, 9833000001),
+Bus Options:
+List the available bus operators for each of the two cities—${pickupCity} and ${targetCityForPrompt}—in this format:
 
-   give all their details you have eg. Activity type for adventure, routes for buses, online link for hotel, etc. all of it!
+Buses in City Name (bolded):
+[Each vendor on a separate line with complete details — name, contact, website (if any), and especially their travel route covered. If no vendors are found for a city, write: "No specific vendors found."]
+
+Example:
+Buses in Pune:
+Skyline Travels (Rakesh Naik, 9876543210) (skylinepune.com, Pune to Mumbai, Pune to Nashik)
+Urban Wheels (Divya Joshi, 9900887766) (urbanwheels.in, Pune to Aurangabad)
+Golden Wheels Travels (Meera Kapoor, 9823456781) (goldenwheels.com, Pune to Lonavala)
+
+Buses in ${pickupCity}:
+[List providers here in the format above, each on new line, else write “No specific vendors found.”]
+
+Buses in ${targetCityForPrompt}:
+[List providers here in the format above, each on new line, else write “No specific vendors found.”]
+
+Hotel Options:
+List hotels here. Each hotel must be on a separate line in the format:
+Hotel Name (Contact Person, Phone Number) (Website if any, Room types, Amenities, etc., and mention the city).
+If no vendors are found, write:
+No specific vendors found.
+For bookings, connect with the Desire4Travels Team at +91 79770 22583.
+
+Cab Services:
+List cab service providers here. Each provider must be on a new line, in the format:
+Provider Name (Contact Person, Phone Number) (City they operate in, Vehicle types, Intercity coverage, Website if available).
+If no vendors are found, write: “No specific vendors found.”
+
+Activities:
+List all adventure or activity providers here. Each must be on a new line, in the format:
+Activity Name or Provider (Contact Person, Phone Number) (City, Activity types, Website if available).
+If no vendors are found, write: “No specific vendors found.”
 `;
     // The rest of the file is standard and correct.
     const result = await fetch(
