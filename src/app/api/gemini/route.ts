@@ -68,10 +68,7 @@ export async function POST(req: Request) {
     This is a very important rule, do not mention any service providers here.
     * Always make sure to think the user can is pumped to go on this trip and you are giving them a very detailed itinerary with respect to their adults/ kids/ seniors number of people, their preferences, etc.
     give them a very detailed itinerary, make it seem like you are a travel guide, each day should atleast cover 3-5 activities other than meals, with smartly managed intercity travel timings, meals, etc.
-    * **Service Provider Details:** List all service providers with their contact information, website, etc.,
-    Make sure to list each verder detail in a separate line, do not use bullet points here. For buses show bus providers in pickup city and destination city as prompted below.
-    I need to have the each service provider name and detail on a separate line, for all cases. Not at all in one line or comma separated.
-
+    
 ---
 **USER TRIP DETAILS:**
 ${JSON.stringify(responses, null, 2)}
