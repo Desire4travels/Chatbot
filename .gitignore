@@ -42,3 +42,5 @@ next-env.d.ts
 
 #virtual env
 .venv
+
+backend_agent

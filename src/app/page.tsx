@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
-import ReactMarkdown from 'react-markdown';
-
+import ReactMarkdown from "react-markdown";
+import { motion } from "framer-motion";
 import axios from "axios";
 import "./app.css";
 
@@ -33,9 +33,9 @@ const questions: string[] = [
   "Where do you want to go? Add all the locations that you are planning to visit (you can select multiple options).",
   "Is it a round trip or one-way?",
   "For how many days are you planning for this trip? Days/Nights",
-  "What type of stay do you prefer (you can select multiple options)?",
-  "What type of transport you would prefer (you can select multiple options)?",
-  "What type of trip are you looking for (you can select multiple options)?",
+  "What type of stay do you prefer(you can select multiple options)?",
+  "What type of transport you would prefer(you can select multiple options)?",
+  "What type of trip are you looking for(you can select multiple options)?",
   "What is your total approximate budget for the trip?",
   "Any specific destinations, activities you want to include?",
   "Any other preferences or special requests?",
@@ -58,6 +58,8 @@ export default function Home() {
   const [itinerary, setItinerary] = useState("");
   const [loading, setLoading] = useState(false);
   const [cityList, setCityList] = useState<string[]>([""]);
+  // In your component's state
+  const [tripId, setTripId] = useState(null);
 
   useEffect(() => {
     if (Array.isArray(responses[3])) {
@@ -157,30 +159,71 @@ export default function Home() {
   const handleSubmit = async () => {
     setLoading(true);
     setError("");
+
+    // Create the array of destinations directly from responses[3]
+    const destinationArray = Array.isArray(responses[3 as keyof StepResponses])
+      ? (responses[3 as keyof StepResponses] as string[]).filter(
+        (c) => c.trim() !== ""
+      )
+      : [];
+
+    const tripDate = responses[1 as keyof StepResponses] || "";
+    const traveler = (responses[0 as keyof StepResponses] as Travelers) ?? {
+      adults: 0,
+      kids: 0,
+      seniors: 0,
+    };
+    const numPeople = Object.values(traveler).reduce((a, b) => a + b, 0);
+
     try {
-      // Always ensure step 3 (city/locations) is included as an array
       const finalResponses = {
         ...responses,
-        3: cityList.filter((c) => c.trim() !== ""),
+        3: destinationArray, // <-- This ensures the full array is in the responses
       };
-      // Map responses to question text keys for backend
       const structuredResponses = Object.fromEntries(
         Object.entries(finalResponses).map(([key, val]) => [
           questions[+key],
           val,
         ])
       );
-      const res = await axios.post("/api/gemini", {
+
+      let apiUrl = "https://desire4travels-1.onrender.com/trip-requests";
+      let method = "POST";
+
+      if (tripId) {
+        apiUrl = `${apiUrl}/${tripId}`;
+        method = "PUT";
+      }
+
+      const dbResponse = await axios({
+        method,
+        url: apiUrl,
+        data: {
+          responses: structuredResponses,
+          tripDate,
+          numPeople,
+          destination: destinationArray, // <-- **This is the key fix.** Send the array directly.
+        },
+      });
+
+      if (method === "POST" && dbResponse.data._id) {
+        setTripId(dbResponse.data._id);
+      }
+
+      const geminiResponse = await axios.post("/api/gemini", {
         responses: structuredResponses,
       });
-      setItinerary(res.data.itinerary || "⚠️ No itinerary returned.");
-      if (res.data.error) setError(res.data.error);
+
+      setItinerary(geminiResponse.data.itinerary || "⚠️ No itinerary returned.");
+      if (geminiResponse.data.error) setError(geminiResponse.data.error);
     } catch (err: any) {
       setError(err?.response?.data?.error || "❌ Error fetching itinerary.");
     } finally {
       setLoading(false);
     }
   };
+
+
 
   const handleBackToStart = () => {
     setResponses({});
@@ -200,9 +243,18 @@ export default function Home() {
   };
   return (
     <main className="main-container">
-      <h1 className="main-heading">🌍 Trip Planner Assistant</h1>
+      <header className="nav">
+        <div className="nav-logo">
+          <a href="https://desire4travels.com/">
+            Desire<span>4</span>Travels
+          </a>
+        </div>
+      </header>
+
+      {/* <h1 className="main-heading">🌍 Trip Planner Assistant</h1> */}
       <p className="sub-heading">
-        Tell us your preferences, we'll do the magic!
+        In few simple steps get a perfectly planned itinerary for your dream
+        trip
       </p>
       <div className="progress-container">
         <div className="progress-bar-outer">
@@ -215,6 +267,25 @@ export default function Home() {
         </div>
         <div className="progress-subtext">Trip Planning Progress</div>
       </div>
+
+      <div className="animated-bg"></div>
+
+      {/* Simple Loader */}
+      {loading && (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            margin: "2rem 0",
+          }}
+        >
+          <div className="simple-loader" />
+          <span style={{ marginLeft: "12px", fontWeight: 500 }}>
+            Generating...
+          </span>
+        </div>
+      )}
 
       {/* Question UI */}
       {step < questions.length && (
@@ -439,13 +510,22 @@ export default function Home() {
           {/* Text/number input for steps 1, 2, 9, 10, 11 */}
           {![0, 3, 4, 5, 6, 7, 8].includes(step) && (
             <div className="center-content">
-              <input
-                type="text"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Type your answer"
-                className="input"
-              />
+              {step === 1 ? (
+                <input
+                  type="date"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  className="input"
+                />
+              ) : (
+                <input
+                  type="text"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Type your answer"
+                  className="input"
+                />
+              )}
             </div>
           )}
 
@@ -488,16 +568,25 @@ export default function Home() {
                         {optionsMap[stepIndex]?.map((opt) => (
                           <label
                             key={opt}
-                            className={`option ${responses[stepIndex as keyof StepResponses] === opt ? "selected" : ""
+                            className={`option ${responses[stepIndex as keyof StepResponses] ===
+                              opt
+                              ? "selected"
+                              : ""
                               }`}
                           >
                             <input
                               type="radio"
                               value={opt}
                               name={`edit-question-${stepIndex}`}
-                              checked={responses[stepIndex as keyof StepResponses] === opt}
+                              checked={
+                                responses[stepIndex as keyof StepResponses] ===
+                                opt
+                              }
                               onChange={() =>
-                                setResponses((prev) => ({ ...prev, [stepIndex]: opt }))
+                                setResponses((prev) => ({
+                                  ...prev,
+                                  [stepIndex]: opt,
+                                }))
                               }
                               hidden
                             />
@@ -510,11 +599,14 @@ export default function Home() {
                       <div className="option-group small">
                         {optionsMap[stepIndex]?.map((opt) => {
                           const selected =
-                            (responses[stepIndex as keyof StepResponses] as string[] | undefined) ?? [];
+                            (responses[stepIndex as keyof StepResponses] as
+                              | string[]
+                              | undefined) ?? [];
                           return (
                             <label
                               key={opt}
-                              className={`option small  ${selected.includes(opt) ? "selected" : ""}`}
+                              className={`option small  ${selected.includes(opt) ? "selected" : ""
+                                }`}
                             >
                               <input
                                 type="checkbox"
@@ -540,54 +632,73 @@ export default function Home() {
                       stepIndex === 0 ? (
                         // Step 0: Travelers
                         <div className="counter-group">
-                          {(["adults", "kids", "seniors"] as const).map((category) => (
-                            <div key={category} className="counter">
-                              <label className="counter-label">
-                                {category.charAt(0).toUpperCase() + category.slice(1)}
-                              </label>
-                              <div className="counter-controls">
-                                <button
-                                  className="counter-btn"
-                                  onClick={() =>
-                                    setResponses((prev) => ({
-                                      ...prev,
-                                      0: {
-                                        ...(prev[0 as keyof StepResponses] as Travelers),
-                                        [category as keyof Travelers]: Math.max(
-                                          0,
-                                          ((prev[0 as keyof StepResponses] as Travelers)?.[
-                                            category as keyof Travelers
-                                          ] || 0) - 1
-                                        ),
-                                      },
-                                    }))
-                                  }
-                                >
-                                  ➖
-                                </button>
-                                <span className="counter-value">
-                                  {(responses[0 as keyof StepResponses] as Travelers)?.[category] || 0}
-                                </span>
-                                <button
-                                  className="counter-btn"
-                                  onClick={() =>
-                                    setResponses((prev) => ({
-                                      ...prev,
-                                      0: {
-                                        ...(prev[0 as keyof StepResponses] as Travelers),
-                                        [category as keyof Travelers]:
-                                          ((prev[0 as keyof StepResponses] as Travelers)?.[
-                                            category as keyof Travelers
-                                          ] || 0) + 1,
-                                      },
-                                    }))
-                                  }
-                                >
-                                  ➕
-                                </button>
+                          {(["adults", "kids", "seniors"] as const).map(
+                            (category) => (
+                              <div key={category} className="counter">
+                                <label className="counter-label">
+                                  {category.charAt(0).toUpperCase() +
+                                    category.slice(1)}
+                                </label>
+                                <div className="counter-controls">
+                                  <button
+                                    className="counter-btn"
+                                    onClick={() =>
+                                      setResponses((prev) => ({
+                                        ...prev,
+                                        0: {
+                                          ...(prev[
+                                            0 as keyof StepResponses
+                                          ] as Travelers),
+                                          [category as keyof Travelers]:
+                                            Math.max(
+                                              0,
+                                              ((
+                                                prev[
+                                                0 as keyof StepResponses
+                                                ] as Travelers
+                                              )?.[
+                                                category as keyof Travelers
+                                              ] || 0) - 1
+                                            ),
+                                        },
+                                      }))
+                                    }
+                                  >
+                                    ➖
+                                  </button>
+                                  <span className="counter-value">
+                                    {(
+                                      responses[
+                                      0 as keyof StepResponses
+                                      ] as Travelers
+                                    )?.[category] || 0}
+                                  </span>
+                                  <button
+                                    className="counter-btn"
+                                    onClick={() =>
+                                      setResponses((prev) => ({
+                                        ...prev,
+                                        0: {
+                                          ...(prev[
+                                            0 as keyof StepResponses
+                                          ] as Travelers),
+                                          [category as keyof Travelers]:
+                                            ((
+                                              prev[
+                                              0 as keyof StepResponses
+                                              ] as Travelers
+                                            )?.[category as keyof Travelers] ||
+                                              0) + 1,
+                                        },
+                                      }))
+                                    }
+                                  >
+                                    ➕
+                                  </button>
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            )
+                          )}
                         </div>
                       ) : stepIndex === 5 ? (
                         // Step 5: Days/Nights
@@ -598,13 +709,18 @@ export default function Home() {
                               className="input"
                               type="number"
                               min={0}
-                              value={(value as { days: number; nights: number }).days}
+                              value={
+                                (value as { days: number; nights: number }).days
+                              }
                               onChange={(e) =>
                                 setResponses((prev) => ({
                                   ...prev,
                                   [stepIndex]: {
                                     days: Number(e.target.value),
-                                    nights: Math.max(0, Number(e.target.value) - 1),
+                                    nights: Math.max(
+                                      0,
+                                      Number(e.target.value) - 1
+                                    ),
                                   },
                                 }))
                               }
@@ -616,12 +732,20 @@ export default function Home() {
                               className="input"
                               type="number"
                               min={0}
-                              value={(value as { days: number; nights: number }).nights}
+                              value={
+                                (value as { days: number; nights: number })
+                                  .nights
+                              }
                               onChange={(e) =>
                                 setResponses((prev) => ({
                                   ...prev,
                                   [stepIndex]: {
-                                    days: (value as { days: number; nights: number }).days,
+                                    days: (
+                                      value as {
+                                        days: number;
+                                        nights: number;
+                                      }
+                                    ).days,
                                     nights: Number(e.target.value),
                                   },
                                 }))
@@ -640,7 +764,9 @@ export default function Home() {
                           onChange={(e) => {
                             const obj: any = {};
                             e.target.value.split(",").forEach((pair) => {
-                              const [k, v] = pair.split(":").map((x) => x.trim());
+                              const [k, v] = pair
+                                .split(":")
+                                .map((x) => x.trim());
                               obj[k] = isNaN(Number(v)) ? v : Number(v);
                             });
                             setResponses((prev) => ({
@@ -701,7 +827,6 @@ export default function Home() {
                           : String(value)}
                     </span>
                   )}
-
                 </li>
               );
             })}
@@ -716,11 +841,26 @@ export default function Home() {
                   ❌ Cancel Edit
                 </button>
                 <button
-                  onClick={handleSubmit}
+                  onClick={() => {
+                    setIsEditingAll(false);
+                    // The handleSubmit function now handles both creation and editing.
+                    handleSubmit();
+                  }}
                   className="button"
                   disabled={loading}
                 >
-                  {loading ? "⏳ Generating..." : "✅ Save & Generate"}
+                  {loading ? (
+                    <span className="loading-content">
+                      <img
+                        src="/Loader.gif"
+                        alt="Loading..."
+                        className="loading-gif"
+                      />
+                      Generating...
+                    </span>
+                  ) : (
+                    "✅ Save & Generate"
+                  )}
                 </button>
               </>
             ) : (
@@ -735,6 +875,7 @@ export default function Home() {
                 >
                   ✏️ Edit
                 </button>
+
                 <button
                   onClick={() => {
                     setIsEditingAll(false);
@@ -742,12 +883,33 @@ export default function Home() {
                       ...prev,
                       3: cityList.filter((c) => c.trim() !== ""),
                     }));
+
+                    // Start loading
+                    setLoading(true);
+
+                    // Call your submit function
                     handleSubmit();
+
+                    // Stop loading after 5 seconds
+                    setTimeout(() => {
+                      setLoading(false);
+                    }, 5000);
                   }}
                   className="button"
                   disabled={loading}
                 >
-                  {loading ? "⏳ Generating..." : "✅ Save & Generate"}
+                  {loading ? (
+                    <span className="loading-content">
+                      <img
+                        src="/Loader.gif"
+                        alt="Loading..."
+                        className="loading-gif"
+                      />
+                      Generating...
+                    </span>
+                  ) : (
+                    "✅ Save & Generate"
+                  )}
                 </button>
               </>
             )}
@@ -761,9 +923,7 @@ export default function Home() {
         <div className="result-card">
           <h2>🗺️ Your Trip Itinerary</h2>
           <div className="itinerary-box markdown-body">
-            <ReactMarkdown>
-              {itinerary}
-            </ReactMarkdown>
+            <ReactMarkdown>{itinerary}</ReactMarkdown>
           </div>
           <button className="button" onClick={handleBackToStart}>
             🔄 Plan Another Trip
