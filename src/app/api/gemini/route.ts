@@ -1,6 +1,60 @@
 import { NextResponse } from 'next/server';
 import { queryServicesByCity } from "@/app/lib/query";
+import qs from 'querystring';
 import axios from 'axios';
+
+// 🆕 NEW ADDITION: Helper function to get distance/duration between locations
+async function getDistancesBetweenLocations(locations: string[], city: string) {
+  if (locations.length < 2) return [];
+
+  const apiKey = process.env.GOOGLE_DISTANCE_MATRIX_API_KEY || process.env.GOOGLE_PLACES_API_KEY;
+  if (!apiKey) {
+    console.error("Distance Matrix: No API key found");
+    return [];
+  }
+
+  const origins = locations.map(name => `${name}, ${city}`).join('|');
+  const destinations = origins; // matrix of all-to-all distances
+
+  const url = `https://maps.googleapis.com/maps/api/distancematrix/json?${qs.stringify({
+    origins,
+    destinations,
+    mode: 'driving',
+    key: apiKey
+  })}`;
+
+  try {
+    const res = await axios.get(url);
+    const data = res.data;
+
+    if (!data.rows || data.status !== 'OK') {
+      console.error(`Distance Matrix API failed: ${data.status}`);
+      return [];
+    }
+
+    const distanceInfo: string[] = [];
+    data.rows.forEach((row: any, i: number) => {
+      row.elements.forEach((el: any, j: number) => {
+        if (i !== j && el.status === 'OK') {
+          distanceInfo.push(`${locations[i]} → ${locations[j]}: ${el.distance.text}, ~${el.duration.text}`);
+        }
+      });
+    });
+
+    // 🆕 ONLY LOG: What's being passed to the main prompt
+    if (distanceInfo.length > 0) {
+      console.log("\n DISTANCE DATA BEING PASSED TO MAIN PROMPT:");
+      distanceInfo.forEach(info => console.log(info));
+      console.log("");
+    }
+
+    return distanceInfo;
+
+  } catch (error: any) {
+    console.error("Distance Matrix function couldn't give output:", error?.message || error);
+    return [];
+  }
+}
 
 // Helper to find the most frequent time slot in a list
 function findMostFrequent(arr: (string | undefined)[]): string | undefined {
@@ -149,9 +203,11 @@ export async function POST(req: Request) {
     const targetCityForPrompt = targetCities.join(', ');
 
     // =================================================================
-    // LOGIC TO GET TIMINGS (UPDATED)
+    // LOGIC TO GET TIMINGS AND DISTANCES (UPDATED)
     // =================================================================
     let locationInfoContext = '';
+    let distanceInfoContext = ''; // 🆕 NEW ADDITION: Distance context variable
+
     try {
       console.log(`Getting location details for the trip...`);
 
@@ -159,8 +215,9 @@ export async function POST(req: Request) {
 
       if (locationNames.length > 0) {
         const primaryCity = targetCities[0];
+
+        // Get timings for all locations
         const timingPromises = locationNames.map(name => getPlaceTimings(name, primaryCity));
-        // The 'timings' variable is now an array of objects: [{ summary: '...', status: '...' }]
         const timings = await Promise.all(timingPromises);
 
         // Use the 'summary' property from the timing object
@@ -175,28 +232,52 @@ export async function POST(req: Request) {
 If for certain locations you recieve "Hours not available" use your own knowledge and estimate a generic idea of the spot's visit timings, think of this smartly.
 Example - If a Park's timings are not available estimate that it might open in the morning and in evening. *
 ${locationDetailsString}
+
 `;
+
+        // 🆕 NEW ADDITION START: Get distances between all locations
+        try {
+          const distanceInfo = await getDistancesBetweenLocations(locationNames, primaryCity);
+
+          if (distanceInfo.length > 0) {
+            distanceInfoContext = `
+---
+**LOCATION DISTANCES:**
+*Use this distance and travel time information to create an efficient, geographically logical itinerary. Group nearby locations together and minimize travel time between activities.*
+
+${distanceInfo.join('\n')}
+
+`;
+          } else {
+            console.log("Distance matrix function couldn't give output - proceeding without distance data");
+          }
+        } catch (distanceError: any) {
+          console.error("Distance matrix function couldn't give output:", distanceError?.message || distanceError);
+        }
+        // 🆕 NEW ADDITION END
 
         console.log("\n--- Passing Following Location Timings to Gemini ---");
         console.log(locationInfoContext);
         console.log("----------------------------------------------------\n");
 
       } else {
-        console.warn("Could not get location names, proceeding without timings.");
+        console.warn("Could not get location names, proceeding without timings and distances.");
       }
     } catch (e) {
       console.error("An error occurred while getting location details, proceeding without them.", e);
     }
     // =================================================================
 
-
     const prompt = `You are an expert travel planner bot for "Desire4Travels". Your primary goal is to generate a highly detailed, practical, and personalized travel itinerary using the rules and data below.
 
 **CORE INSTRUCTIONS**
 
 1.  **Itinerary Generation:** Use your extensive knowledge of **${targetCityForPrompt}** to create a rich, day-by-day plan.
+    * Strictly refer to USER TRIP DETAILS given below. 
      **Crucially, if a "LOCATION TIMINGS" section is provided below, you MUST use those timings to build a realistic schedule.**
-     **Account fot all the user's preferences you have been given below and the locationInfoContext to make a full proof itinerary**
+     **CRITICALLY IMPORTANT: If "LOCATION DISTANCES" information is provided, you MUST use it to create a geographically efficient itinerary. Group nearby locations together in the same time slots and 
+      arrange the daily schedule to minimize travel time. For example, if Location A is only 2km from Location B but 15km from Location C, schedule A and B together, not A and C.**
+     **Account for all the user's preferences you have been given below and use both locationInfoContext and distanceInfoContext to make a foolproof, time-efficient itinerary**
 
 2.  **Vendor Integration:** The "VENDOR CONTEXT" provided is your **only** source for specific business names.
     * **If a suggested activity matches a vendor**, you can suggest it in the itinerary to refer service provider list below .
@@ -220,22 +301,31 @@ ${locationDetailsString}
 6. intercity travel suggest eg. If the user is traveling from Pune to Mumbai, suggest them to take a train or bus, and if they are traveling from Mumbai to Delhi, suggest them to take a flight, etc.
     *very very important - start the itinerary with the intercity travel suggestion, like if they are traveling from Pune to Mumbai, start the itinerary with "Take a train from Pune to Mumbai, it will take around 3 hours, etc." 
     "or if the user is travelling from a far away city start the itinerary by saying touch down to the nearest airport/ railway station only one of those 2 (give name of that air port or station) and then continue with the itinerary. This is a very important rule, do not forget to start the itinerary with intercity travel suggestion.*
-7. Geographical Clustering & Efficiency
-    You MUST group attractions that are geographically close into the same time block (e.g., morning, afternoon) to create a logical and efficient plan that minimizes travel. For instance, in Pune, Shaniwar Wada and Dagdusheth Temple are neighbors and MUST be scheduled together. Do not suggest attractions on opposite sides of a city without accounting for major travel time.
+
+7. **Geographical Clustering & Efficiency**
+    You MUST use the distance information provided to create the most efficient route possible. Follow these rules:
+    - **Same-Day Clustering:** Activities scheduled on the same day should be geographically close (ideally within 5-10km of each other)
+    - **Logical Sequencing:** Arrange the day's activities in a route that minimizes backtracking
+    - **Travel Time Buffers:** Include realistic travel time between locations based on the distance data provided
+    - **Morning-to-Evening Flow:** Start from one area and move logically through the city rather than jumping across town multiple times
 
 8. Engaging "Travel Guide" Descriptions
     Adopt the persona of an enthusiastic local guide. For each location, provide a concise (1-2 sentence) description that captures its essence, historical or cultural significance, and a unique feature. The goal is to make the traveler excited to visit each spot.
 
-9. Flexible Itinerary with Backup Options
-    For each day, provide 1-2 unique backup activities suitable for the same time slot as the main suggestion. An activity suggested as a backup CANNOT be repeated as a main or backup option on any other day. Backups must also be geographically sensible for that day's plan.
-    Compulsory: make sure that these backup options are located close to the main activity of that day, so that the user can easily switch to these backup options if they want to skip the main activity. 
+9. **Flexible Itinerary with Backup Options (LOCATION-AWARE)**
+    For each day, provide 1-2 unique backup activities that are:
+    - Suitable for the same time slot as the main suggestion
+    - **Geographically close to the main activities of that day** (use distance data to ensure this)
+    - Unique (not repeated as main or backup options on other days)
+    - Easily substitutable without disrupting the day's geographical flow
 
 10. Fallback Logic for Missing Timings
     If location timings are marked as "Hours not available" you MUST use your general knowledge to estimate a logical time slot for the visit. For example, assume parks are open during daylight hours and temples may close midday. Always add a note for the traveler to verify the hours locally.---
 
 **USER TRIP DETAILS:**
 ${JSON.stringify(responses, null, 2)}
-${locationInfoContext}
+${locationInfoContext}${distanceInfoContext}
+
 ---
 **VENDOR CONTEXT:**
 ${context}
@@ -248,11 +338,12 @@ ${context}
 **Itinerary**
 
 **Day 1: [Day 1 Theme]** (each day should have a minimum of 3 main activities/ travel locations)
-- **Morning (Time):** [Touch down to xyz airport/ railway station/ bus stop. Check into hotel (if stay longer than 1 day), Have breakfast, 
+- **Morning (Time):** [Touch down to xyz airport/ railway station/ bus stop from (mention user's pickup city compulsorily). Check into hotel (if stay longer than 1 day), Have breakfast, 
   Activity description in 1-2 lines.]
 - **Afternoon (Time):** [Activity description in 1-2 lines + suggest to have lunch [Meal suggestion here, like "at a local restaurant" or "at your hotel."]]
 - **Evening (Time):** [Activity description in 1-2 lines.]
 - **Night (Time):** [Activity description in 1-2 lines + suggest to have dinner [Meal suggestion here, like "at a local restaurant" or "at your hotel."]]
+(one line gap)
 Backup Options: (this should not be in bold, just suggest these 1 - 2 options for each day right below the night activity)
 (I want you to give user some backup options for each day, like if they want to skip an activity, they can do this instead, 
 so give them some backup options for each day, like 2-3 activities per day as backup + a minimum of 3 activities laid out in itinerary schedule, 
