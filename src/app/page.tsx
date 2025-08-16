@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import { motion } from "framer-motion";
 import axios from "axios";
@@ -24,6 +24,7 @@ type StepResponses = {
   9: string;
   10: string;
   11: string;
+  12: string;
 };
 
 const questions: string[] = [
@@ -37,8 +38,9 @@ const questions: string[] = [
   "What type of transport you would prefer(you can select multiple options)?",
   "What type of trip are you looking for(you can select multiple options)?",
   "What is your total approximate budget for the trip?",
-  "Any specific destinations, activities you want to include?",
-  "Any other preferences or special requests?",
+  "Any specific destinations or activities you’d like to include? (Optional)",
+  "Any other preferences or special requests? (Optional)",
+  "Please provide your 10-digit contact number",
 ];
 
 const optionsMap: Record<number, string[] | null> = {
@@ -60,6 +62,15 @@ export default function Home() {
   const [cityList, setCityList] = useState<string[]>([""]);
   // In your component's state
   const [tripId, setTripId] = useState(null);
+
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [contactNumber, setContactNumber] = useState("");
+  const [contactError, setContactError] = useState("");
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [showCopySuccess, setShowCopySuccess] = useState(false);
+  const [showCopyModal, setShowCopyModal] = useState(false);
+  const itineraryRef = useRef<HTMLDivElement>(null);
+  const itineraryModalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (Array.isArray(responses[3])) {
@@ -119,12 +130,20 @@ export default function Home() {
       };
       return val && (val.days > 0 || val.nights > 0);
     }
+
+    if (step === 12) {
+      const phone = message.trim();
+      return /^\d{10}$/.test(phone);
+    }
+
     if (step === 3) return cityList.some((c) => c.trim());
     if (isSingleChoice(step)) return !!responses[step as keyof StepResponses];
     if (isMultiSelect(step))
       return (
         ((responses[step as keyof StepResponses] as string[])?.length ?? 0) > 0
       );
+    // Make steps 10 and 11 optional
+    if (step === 10 || step === 11) return true;
     return !!message.trim() || !!responses[step as keyof StepResponses];
   };
 
@@ -134,6 +153,8 @@ export default function Home() {
         ...responses,
         [step]: cityList.filter((c) => c.trim() !== ""),
       });
+    } else if (step === 12) {
+      setResponses({ ...responses, [step]: message.trim() }); // ensure number saved
     } else if (!responses[step as keyof StepResponses]) {
       setResponses({ ...responses, [step]: message });
     }
@@ -160,11 +181,15 @@ export default function Home() {
     setLoading(true);
     setError("");
 
+    const contactNumberFromResponse = responses[
+      12 as keyof StepResponses
+    ] as string;
+
     // Create the array of destinations directly from responses[3]
     const destinationArray = Array.isArray(responses[3 as keyof StepResponses])
       ? (responses[3 as keyof StepResponses] as string[]).filter(
-        (c) => c.trim() !== ""
-      )
+          (c) => c.trim() !== ""
+        )
       : [];
 
     const tripDate = responses[1 as keyof StepResponses] || "";
@@ -202,7 +227,8 @@ export default function Home() {
           responses: structuredResponses,
           tripDate,
           numPeople,
-          destination: destinationArray, // <-- **This is the key fix.** Send the array directly.
+          destination: destinationArray,
+          contactNumber: contactNumberFromResponse,
         },
       });
 
@@ -214,7 +240,9 @@ export default function Home() {
         responses: structuredResponses,
       });
 
-      setItinerary(geminiResponse.data.itinerary || "⚠️ No itinerary returned.");
+      setItinerary(
+        geminiResponse.data.itinerary || "⚠️ No itinerary returned."
+      );
       if (geminiResponse.data.error) setError(geminiResponse.data.error);
     } catch (err: any) {
       setError(err?.response?.data?.error || "❌ Error fetching itinerary.");
@@ -222,8 +250,6 @@ export default function Home() {
       setLoading(false);
     }
   };
-
-
 
   const handleBackToStart = () => {
     setResponses({});
@@ -241,6 +267,49 @@ export default function Home() {
     kids: 0,
     seniors: 0,
   };
+
+  // Save itinerary handler (simulate API call)
+  const handleSaveItinerary = async () => {
+    if (!/^\d{10}$/.test(contactNumber)) {
+      setContactError("Please enter a valid 10-digit contact number.");
+      return;
+    }
+    setContactError("");
+    // Simulate save (replace with your API call if needed)
+    try {
+      if (!tripId) {
+        setContactError("Trip ID not found. Please submit the trip first.");
+        return;
+      }
+
+      // Send update to backend
+      await axios.put(
+        `https://desire4travels-1.onrender.com/trip-requests/${tripId}`,
+        {
+          contactNumber: contactNumber,
+          itinerary: itinerary,
+        }
+      );
+
+      setSaveSuccess(true);
+      setShowSaveModal(false);
+      setShowCopyModal(true);
+    } catch (err: any) {
+      console.error("Error saving itinerary:", err);
+      setContactError("Failed to save itinerary. Please try again.");
+    }
+  };
+
+  // Copy itinerary handler
+  const handleCopyItinerary = async () => {
+    if (itineraryRef.current) {
+      const text = itineraryRef.current.innerText;
+      await navigator.clipboard.writeText(text);
+      setShowCopySuccess(true);
+      setTimeout(() => setShowCopySuccess(false), 1500);
+    }
+  };
+
   return (
     <main className="main-container">
       <header className="nav">
@@ -380,10 +449,11 @@ export default function Home() {
                 {optionsMap[step]?.map((opt) => (
                   <label
                     key={opt}
-                    className={`option small  ${responses[step as keyof StepResponses] === opt
-                      ? "selected"
-                      : ""
-                      }`}
+                    className={`option small  ${
+                      responses[step as keyof StepResponses] === opt
+                        ? "selected"
+                        : ""
+                    }`}
                   >
                     <input
                       type="radio"
@@ -414,8 +484,9 @@ export default function Home() {
                   return (
                     <label
                       key={opt}
-                      className={`option ${selected.includes(opt) ? "selected" : ""
-                        }`}
+                      className={`option ${
+                        selected.includes(opt) ? "selected" : ""
+                      }`}
                     >
                       <input
                         type="checkbox"
@@ -517,6 +588,24 @@ export default function Home() {
                   onChange={(e) => setMessage(e.target.value)}
                   className="input"
                 />
+              ) : step === 9 ? (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                  }}
+                >
+                  <input
+                    type="text"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder="Type your answer"
+                    className="input"
+                    style={{ flex: 1 }}
+                  />
+                  <span style={{ fontWeight: 500, color: "#6a8dff" }}>INR</span>
+                </div>
               ) : (
                 <input
                   type="text"
@@ -568,11 +657,12 @@ export default function Home() {
                         {optionsMap[stepIndex]?.map((opt) => (
                           <label
                             key={opt}
-                            className={`option ${responses[stepIndex as keyof StepResponses] ===
+                            className={`option ${
+                              responses[stepIndex as keyof StepResponses] ===
                               opt
-                              ? "selected"
-                              : ""
-                              }`}
+                                ? "selected"
+                                : ""
+                            }`}
                           >
                             <input
                               type="radio"
@@ -605,8 +695,9 @@ export default function Home() {
                           return (
                             <label
                               key={opt}
-                              className={`option small  ${selected.includes(opt) ? "selected" : ""
-                                }`}
+                              className={`option small  ${
+                                selected.includes(opt) ? "selected" : ""
+                              }`}
                             >
                               <input
                                 type="checkbox"
@@ -654,7 +745,7 @@ export default function Home() {
                                               0,
                                               ((
                                                 prev[
-                                                0 as keyof StepResponses
+                                                  0 as keyof StepResponses
                                                 ] as Travelers
                                               )?.[
                                                 category as keyof Travelers
@@ -669,7 +760,7 @@ export default function Home() {
                                   <span className="counter-value">
                                     {(
                                       responses[
-                                      0 as keyof StepResponses
+                                        0 as keyof StepResponses
                                       ] as Travelers
                                     )?.[category] || 0}
                                   </span>
@@ -685,7 +776,7 @@ export default function Home() {
                                           [category as keyof Travelers]:
                                             ((
                                               prev[
-                                              0 as keyof StepResponses
+                                                0 as keyof StepResponses
                                               ] as Travelers
                                             )?.[category as keyof Travelers] ||
                                               0) + 1,
@@ -821,10 +912,10 @@ export default function Home() {
                       {Array.isArray(value)
                         ? value.join(", ")
                         : typeof value === "object" && value !== null
-                          ? Object.entries(value)
+                        ? Object.entries(value)
                             .map(([k, v]) => `${k}: ${v}`)
                             .join(", ")
-                          : String(value)}
+                        : String(value)}
                     </span>
                   )}
                 </li>
@@ -891,9 +982,6 @@ export default function Home() {
                     handleSubmit();
 
                     // Stop loading after 5 seconds
-                    setTimeout(() => {
-                      setLoading(false);
-                    }, 5000);
                   }}
                   className="button"
                   disabled={loading}
@@ -921,13 +1009,120 @@ export default function Home() {
       {/* Itinerary Result */}
       {itinerary && (
         <div className="result-card">
-          <h2>🗺️ Your Trip Itinerary</h2>
-          <div className="itinerary-box markdown-body">
+          <div className="result-card-header">
+            <h2>🗺️ Your Trip Itinerary</h2>
+            <button
+              className="button"
+              onClick={() => {
+                setShowCopyModal(true); // directly open copy modal
+                setShowSaveModal(false); // make sure contact modal never shows
+                setContactError("");
+                setSaveSuccess(false);
+              }}
+            >
+              Save this Itinerary
+            </button>
+          </div>
+
+          <div className="itinerary-box markdown-body" ref={itineraryRef}>
             <ReactMarkdown>{itinerary}</ReactMarkdown>
           </div>
+
           <button className="button" onClick={handleBackToStart}>
             🔄 Plan Another Trip
           </button>
+        </div>
+      )}
+
+      {/* Save Modal */}
+      {showSaveModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>Enter your 10-digit contact number</h3>
+            <input
+              className="input"
+              type="tel"
+              maxLength={10}
+              value={contactNumber}
+              onChange={(e) =>
+                setContactNumber(e.target.value.replace(/\D/g, ""))
+              }
+              placeholder="Contact Number"
+            />
+            {contactError && <p className="error">{contactError}</p>}
+
+            <div className="modal-actions">
+              <button className="button" onClick={handleSaveItinerary}>
+                Save
+              </button>
+              <button
+                className="button secondary"
+                onClick={() => setShowSaveModal(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Copy Success Popup */}
+      {showCopySuccess && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <p>
+              ✅ Itinerary copied to clipboard!
+              <br />
+              Now you can paste this itinerary into <strong>
+                WhatsApp
+              </strong>{" "}
+              💬, a <strong>Word file</strong> 📄, or anywhere else from your{" "}
+              <strong>Clipboard</strong> 📋 for saving.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {showCopyModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>Copy Your Itinerary</h3>
+            <div
+              className="itinerary-box"
+              style={{
+                maxHeight: 200,
+                overflowY: "auto",
+                marginBottom: "1rem",
+                fontSize: "0.75rem",
+              }}
+            >
+              <div ref={itineraryModalRef}>
+                <ReactMarkdown>{itinerary}</ReactMarkdown>
+              </div>
+            </div>
+            <div className="modal-actions">
+              <button
+                className="button"
+                onClick={async () => {
+                  if (itineraryModalRef.current) {
+                    const text = itineraryModalRef.current.innerText;
+                    await navigator.clipboard.writeText(text);
+                    setShowCopyModal(false);
+                    setShowCopySuccess(true); // show success message
+                    setTimeout(() => setShowCopySuccess(false), 2500);
+                  }
+                }}
+              >
+                📋 Copy Itinerary
+              </button>
+              <button
+                className="button secondary"
+                onClick={() => setShowCopyModal(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </main>
