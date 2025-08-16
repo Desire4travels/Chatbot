@@ -3,9 +3,19 @@ import { queryServicesByCity } from "@/app/lib/query";
 import qs from 'querystring';
 import axios from 'axios';
 
-// 🆕 NEW ADDITION: Helper function to get distance/duration between locations
-async function getDistancesBetweenLocations(locations: string[], city: string) {
-  if (locations.length < 2) return [];
+// IMPROVED: Better distance calculation with complete coverage verification
+async function getDistancesBetweenLocations(attractions: string[], city: string) {
+  if (attractions.length < 2) {
+    console.log(`⚠️ Only ${attractions.length} attraction(s) in ${city}, skipping distance calculation`);
+    return [];
+  }
+
+  // Remove duplicates and clean attraction names
+  const cleanAttractions = Array.from(new Set(attractions.map(name => name.trim())));
+
+  if (cleanAttractions.length !== attractions.length) {
+    console.log(`🧹 Removed ${attractions.length - cleanAttractions.length} duplicate attractions in ${city}`);
+  }
 
   const apiKey = process.env.GOOGLE_DISTANCE_MATRIX_API_KEY || process.env.GOOGLE_PLACES_API_KEY;
   if (!apiKey) {
@@ -13,13 +23,84 @@ async function getDistancesBetweenLocations(locations: string[], city: string) {
     return [];
   }
 
-  const origins = locations.map(name => `${name}, ${city}`).join('|');
-  const destinations = origins; // matrix of all-to-all distances
+  console.log(`🗺️ Calculating distances for ${cleanAttractions.length} unique attractions in ${city}`);
+  console.log(`📍 Attractions: ${cleanAttractions.join(', ')}`);
+
+  const distanceInfo: string[] = [];
+  const processedPairs = new Set<string>(); // Track which pairs we've calculated
+
+  // Strategy: Process ALL attractions as hubs to ensure complete coverage
+  const totalPairs = (cleanAttractions.length * (cleanAttractions.length - 1)) / 2;
+  console.log(`🎯 Target: ${totalPairs} unique distance pairs for ${city}`);
+
+  for (let hubIndex = 0; hubIndex < cleanAttractions.length; hubIndex++) {
+    const hubLocation = cleanAttractions[hubIndex];
+
+    // Get all other attractions (excluding the hub)
+    const otherAttractions = cleanAttractions.filter((_, index) => index !== hubIndex);
+
+    // Process in batches (max 24 destinations per hub to stay under 25 element limit)
+    const BATCH_SIZE = 24;
+
+    for (let batchStart = 0; batchStart < otherAttractions.length; batchStart += BATCH_SIZE) {
+      const batchDestinations = otherAttractions.slice(batchStart, batchStart + BATCH_SIZE);
+
+      console.log(`📍 Hub ${hubIndex + 1}/${cleanAttractions.length}: ${hubLocation} → ${batchDestinations.length} destinations`);
+
+      const batchDistances = await getHubToDestinationsDistances(
+        hubLocation,
+        batchDestinations,
+        city,
+        apiKey,
+        processedPairs
+      );
+
+      distanceInfo.push(...batchDistances);
+
+      // Add delay between requests
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
+  }
+
+  // Verify coverage
+  const uniqueDistanceInfo = Array.from(new Set(distanceInfo));
+  console.log(`✅ Calculated ${uniqueDistanceInfo.length} unique distances out of ${totalPairs} possible pairs for ${city}`);
+
+  if (uniqueDistanceInfo.length < totalPairs * 0.8) { // If less than 80% coverage
+    console.log(`⚠️ Coverage below 80% for ${city}. Some locations might be unreachable.`);
+  }
+
+  if (uniqueDistanceInfo.length > 0) {
+    console.log(`\n🗺️ DISTANCE DATA FOR ${city.toUpperCase()} (${uniqueDistanceInfo.length} connections):`);
+    uniqueDistanceInfo.forEach(info => console.log(`  ${info}`));
+    console.log("");
+  } else {
+    console.log(`⚠️ No distance data retrieved for ${city}`);
+  }
+
+  return uniqueDistanceInfo;
+}
+
+// IMPROVED: Hub to destinations with pair tracking
+async function getHubToDestinationsDistances(
+  hubLocation: string,
+  destinations: string[],
+  city: string,
+  apiKey: string,
+  processedPairs: Set<string>
+): Promise<string[]> {
+
+  if (destinations.length === 0) return [];
+
+  const origins = `${hubLocation}, ${city}`;
+  const destinationsStr = destinations.map(name => `${name}, ${city}`).join('|');
 
   const url = `https://maps.googleapis.com/maps/api/distancematrix/json?${qs.stringify({
     origins,
-    destinations,
+    destinations: destinationsStr,
     mode: 'driving',
+    units: 'metric',
+    avoid: 'tolls', // Avoid tolls for more realistic routes
     key: apiKey
   })}`;
 
@@ -28,51 +109,47 @@ async function getDistancesBetweenLocations(locations: string[], city: string) {
     const data = res.data;
 
     if (!data.rows || data.status !== 'OK') {
-      console.error(`Distance Matrix API failed: ${data.status}`);
+      console.error(`❌ Distance Matrix API failed for ${hubLocation}: ${data.status}`);
       return [];
     }
 
     const distanceInfo: string[] = [];
-    data.rows.forEach((row: any, i: number) => {
+    const row = data.rows[0];
+
+    if (row && row.elements) {
       row.elements.forEach((el: any, j: number) => {
-        if (i !== j && el.status === 'OK') {
-          distanceInfo.push(`${locations[i]} → ${locations[j]}: ${el.distance.text}, ~${el.duration.text}`);
+        const destination = destinations[j];
+
+        // Create normalized pair key to avoid duplicates
+        const pairKey = [hubLocation, destination].sort().join('↔');
+
+        if (el.status === 'OK' && !processedPairs.has(pairKey)) {
+          // Validate the distance makes sense (not 1m between major attractions)
+          const distanceValue = el.distance.value; // in meters
+          const durationValue = el.duration.value; // in seconds
+
+          if (distanceValue > 50 && durationValue > 30) { // At least 50m and 30 seconds
+            distanceInfo.push(`${hubLocation} → ${destination}: ${el.distance.text}, ~${el.duration.text}`);
+            processedPairs.add(pairKey);
+          } else {
+            console.warn(`🚫 Suspicious distance filtered: ${hubLocation} → ${destination}: ${el.distance.text}`);
+          }
+        } else if (el.status !== 'OK') {
+          console.warn(`⚠️ No route found: ${hubLocation} → ${destination} (${el.status})`);
         }
       });
-    });
-
-    // 🆕 ONLY LOG: What's being passed to the main prompt
-    if (distanceInfo.length > 0) {
-      console.log("\n DISTANCE DATA BEING PASSED TO MAIN PROMPT:");
-      distanceInfo.forEach(info => console.log(info));
-      console.log("");
     }
 
     return distanceInfo;
 
   } catch (error: any) {
-    console.error("Distance Matrix function couldn't give output:", error?.message || error);
+    console.error(`❌ Distance API error for ${hubLocation}:`, error?.message || error);
     return [];
   }
 }
 
-// Helper to find the most frequent time slot in a list
-function findMostFrequent(arr: (string | undefined)[]): string | undefined {
-  const filteredArr = arr.filter(time => time && !time.toLowerCase().includes('closed'));
-  if (!filteredArr.length) return undefined;
-
-  const counts = filteredArr.reduce((acc, value) => {
-    if (value !== undefined) {
-      acc[value] = (acc[value] || 0) + 1;
-    }
-    return acc;
-  }, {} as Record<string, number>);
-
-  return Object.keys(counts).reduce((a, b) => (counts[a] > counts[b] ? a : b));
-}
-
-// HELPER FUNCTION 1: Get location names from Gemini
-async function getLocationNamesFromGemini(responses: Record<string, any>): Promise<string[]> {
+// IMPROVED: Gemini prompt to avoid duplicates
+async function getLocationNamesFromGemini(responses: Record<string, any>): Promise<{ city: string, attractions: string[] }[]> {
   const travelers = responses["How many people are going for the trip?"] || { adults: 2, kids: 0, seniors: 0 };
   const tripType = responses["What type of trip are you looking for (you can select multiple options)?"] || "Leisure";
   const duration = responses["For how many days are you planning for this trip? Days/Nights"] || { days: 3 };
@@ -81,8 +158,12 @@ async function getLocationNamesFromGemini(responses: Record<string, any>): Promi
 
   const prompt = `
     Based on the following detailed user preferences for a trip to ${cities.join(', ')}, suggest 10 to 12 specific, well-known tourist attractions or points of interest for each city.
-    Also refer to the user's number of days for the trip to give out the number of locations to suggest, use other inputs aswell to suggest the locations.
-    Example - for a trip to cities Mumbai & Pune,for Pune suggest 10 to 12 popular spots and for Mumbai suggest 10 to 12 popular spots, etc.
+    
+    IMPORTANT RULES:
+    1. Each attraction name must be unique (no duplicates like "Hadimba Temple" and "Hidimba Temple")
+    2. Use the most commonly known name for each attraction
+    3. Ensure attractions are actually located in the specified city
+    4. Focus on major, accessible tourist attractions
 
     **Trip Details:**
     - Travelers: ${travelers.adults} adults, ${travelers.kids} kids, ${travelers.seniors} seniors.
@@ -90,10 +171,19 @@ async function getLocationNamesFromGemini(responses: Record<string, any>): Promi
     - Duration: ${duration.days} days.
     - Specific Requests: ${specificRequests}.
 
-    IMPORTANT: Your entire response must be ONLY a single, valid JSON array of strings. Do not add any introductory text, explanations, or markdown.
+    IMPORTANT: Your entire response must be ONLY a single, valid JSON array with this exact structure:
+    [
+      {
+        "city": "CityName1",
+        "attractions": ["Attraction1", "Attraction2", "Attraction3", ...]
+      },
+      {
+        "city": "CityName2", 
+        "attractions": ["Attraction1", "Attraction2", "Attraction3", ...]
+      }
+    ]
 
-    Example Response:
-    ["Shaniwar Wada", "Aga Khan Palace", "Sinhagad Fort", "Raja Dinkar Kelkar Museum", "Pataleshwar Cave Temple"]
+    Do not add any introductory text, explanations, or markdown.
   `;
 
   try {
@@ -118,7 +208,18 @@ async function getLocationNamesFromGemini(responses: Record<string, any>): Promi
     const data = await response.json();
     const text = data.candidates[0]?.content.parts[0]?.text;
     console.log("Got location names from Gemini:", text);
-    return JSON.parse(text) as string[];
+
+    const parsed = JSON.parse(text);
+
+    // Additional validation and cleaning
+    if (Array.isArray(parsed)) {
+      return parsed.map(cityData => ({
+        city: cityData.city,
+        attractions: Array.from(new Set(cityData.attractions.map((attr: string) => attr.trim())))
+      }));
+    } else {
+      throw new Error("Invalid response structure from Gemini");
+    }
 
   } catch (error) {
     console.error("Error fetching location names from Gemini:", error);
@@ -159,6 +260,22 @@ async function getPlaceTimings(placeName: string, cityName: string): Promise<{ s
         summary = `${weekdayPart} | ${weekendPart}`;
       }
       return { summary, status: 'success' };
+
+      // Helper function to find the most frequent value in an array
+      function findMostFrequent(arr: (string | undefined)[]): string | undefined {
+        const freq: Record<string, number> = {};
+        let maxCount = 0;
+        let mostFrequent: string | undefined = undefined;
+        for (const item of arr) {
+          if (!item) continue;
+          freq[item] = (freq[item] || 0) + 1;
+          if (freq[item] > maxCount) {
+            maxCount = freq[item];
+            mostFrequent = item;
+          }
+        }
+        return mostFrequent;
+      }
     }
 
     return { summary: "Hours not available", status: 'no_hours' };
@@ -202,62 +319,87 @@ export async function POST(req: Request) {
     const matches = queryResult?.matches ?? [];
     const targetCityForPrompt = targetCities.join(', ');
 
+    // UPDATED: Main logic section in your route handler
     // =================================================================
-    // LOGIC TO GET TIMINGS AND DISTANCES (UPDATED)
+    // LOGIC TO GET TIMINGS AND DISTANCES (UPDATED FOR NEW STRUCTURE)
     // =================================================================
     let locationInfoContext = '';
-    let distanceInfoContext = ''; // 🆕 NEW ADDITION: Distance context variable
+    let distanceInfoContext = '';
 
     try {
       console.log(`Getting location details for the trip...`);
 
-      const locationNames = await getLocationNamesFromGemini(responses);
+      const cityAttractions = await getLocationNamesFromGemini(responses);
 
-      if (locationNames.length > 0) {
-        const primaryCity = targetCities[0];
+      if (cityAttractions.length > 0) {
+        let allLocationDetails: string[] = [];
+        let allDistanceInfo: string[] = [];
 
-        // Get timings for all locations
-        const timingPromises = locationNames.map(name => getPlaceTimings(name, primaryCity));
-        const timings = await Promise.all(timingPromises);
+        // Process each city separately
+        for (const cityData of cityAttractions) {
+          const { city, attractions } = cityData;
 
-        // Use the 'summary' property from the timing object
-        const locationDetailsString = locationNames.map((name, index) => {
-          return `**${name}:** ${timings[index].summary}`;
-        }).join('\n');
+          console.log(`\n🏙️ Processing ${city} with ${attractions.length} attractions...`);
 
-        locationInfoContext = `
+          // Get timings for all attractions in this city
+          const timingPromises = attractions.map(name => getPlaceTimings(name, city));
+          const timings = await Promise.all(timingPromises);
+
+          // Add city header and location details
+          allLocationDetails.push(`\n**${city.toUpperCase()} ATTRACTIONS:**`);
+          const cityLocationDetails = attractions.map((name, index) => {
+            return `**${name}:** ${timings[index].summary}`;
+          });
+          allLocationDetails.push(...cityLocationDetails);
+
+          // Get distances for attractions within this city
+          try {
+            const cityDistances = await getDistancesBetweenLocations(attractions, city);
+
+            if (cityDistances.length > 0) {
+              allDistanceInfo.push(`\n**${city.toUpperCase()} DISTANCES:**`);
+              allDistanceInfo.push(...cityDistances);
+            }
+          } catch (distanceError: any) {
+            console.error(`Distance calculation failed for ${city}:`, distanceError?.message || distanceError);
+          }
+
+          // Add delay between cities to be respectful to APIs
+          if (cityAttractions.indexOf(cityData) < cityAttractions.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        }
+
+        // Build context strings
+        if (allLocationDetails.length > 0) {
+          locationInfoContext = `
 ---
 **LOCATION TIMINGS:**
 *This is a summary of typical opening hours. You MUST use this information to create a practical schedule. Assume timings can vary on public holidays.
-If for certain locations you recieve "Hours not available" use your own knowledge and estimate a generic idea of the spot's visit timings, think of this smartly.
-Example - If a Park's timings are not available estimate that it might open in the morning and in evening. *
-${locationDetailsString}
+If for certain locations you receive "Hours not available" use your own knowledge and estimate a generic idea of the spot's visit timings, think of this smartly.
+Example - If a Park's timings are not available estimate that it might open in the morning and in evening.*
+${allLocationDetails.join('\n')}
 
 `;
+        }
 
-        // 🆕 NEW ADDITION START: Get distances between all locations
-        try {
-          const distanceInfo = await getDistancesBetweenLocations(locationNames, primaryCity);
-
-          if (distanceInfo.length > 0) {
-            distanceInfoContext = `
+        if (allDistanceInfo.length > 0) {
+          distanceInfoContext = `
 ---
 **LOCATION DISTANCES:**
-*Use this distance and travel time information to create an efficient, geographically logical itinerary. Group nearby locations together and minimize travel time between activities.*
+*Use this distance and travel time information to create an efficient, geographically logical itinerary. Group nearby locations together and minimize travel time between activities. 
+IMPORTANT: These distances are ONLY within the same city - do not use this data for intercity travel planning.*
 
-${distanceInfo.join('\n')}
+${allDistanceInfo.join('\n')}
 
 `;
-          } else {
-            console.log("Distance matrix function couldn't give output - proceeding without distance data");
-          }
-        } catch (distanceError: any) {
-          console.error("Distance matrix function couldn't give output:", distanceError?.message || distanceError);
         }
-        // 🆕 NEW ADDITION END
 
-        console.log("\n--- Passing Following Location Timings to Gemini ---");
+        console.log("\n--- Passing Following Location Data to Gemini ---");
         console.log(locationInfoContext);
+        if (distanceInfoContext) {
+          console.log(distanceInfoContext);
+        }
         console.log("----------------------------------------------------\n");
 
       } else {
@@ -322,6 +464,18 @@ ${distanceInfo.join('\n')}
 10. Fallback Logic for Missing Timings
     If location timings are marked as "Hours not available" you MUST use your general knowledge to estimate a logical time slot for the visit. For example, assume parks are open during daylight hours and temples may close midday. Always add a note for the traveler to verify the hours locally.---
 
+--- CRITICAL ITINERARY LOGIC (NON-NEGOTIABLE) ---
+You are a route-optimization engine first. Before generating any text, you MUST adhere to these core rules. Failure to follow them will result in an incorrect output.
+1. EFFICIENCY IS THE ONLY PRIORITY: Your primary directive is to create the most efficient itinerary possible. You will use the provided distance and timing data as the absolute truth. Do not deviate.
+2. BUILD AROUND GEOGRAPHICAL CLUSTERS: Identify groups of attractions that are very close to each other (e.g., within 2-3 km). Each day's plan MUST focus on only ONE geographical cluster.
+STRICTLY FORBIDDEN: Never mix locations from distant clusters on the same day. For example, scheduling a central Pune location, then an east Pune location, then back to central Pune is an unacceptable error.
+3. ISOLATE OUTLIERS: Any location that is very far away (e.g., Sinhagad Fort, >25km) MUST be treated as a separate, dedicated trip requiring its own half-day or full-day schedule. You must explicitly mention the long travel time.
+4. DATA IS LAW:
+A short distance (< 1.5 km) means "schedule these attractions back-to-back." This is not a suggestion; it is a command.
+Opening hours are absolute. An attraction that opens at 10:00 AM cannot be scheduled for 9:00 AM.
+You must state the travel time between each location in the final itinerary.
+
+
 **USER TRIP DETAILS:**
 ${JSON.stringify(responses, null, 2)}
 ${locationInfoContext}${distanceInfoContext}
@@ -341,10 +495,9 @@ ${context}
 - **Morning (Time):** [Touch down to xyz airport/ railway station/ bus stop from (mention user's pickup city compulsorily). Check into hotel (if stay longer than 1 day), Have breakfast, 
   Activity description in 1-2 lines.]
 - **Afternoon (Time):** [Activity description in 1-2 lines + suggest to have lunch [Meal suggestion here, like "at a local restaurant" or "at your hotel."]]
-- **Evening (Time):** [Activity description in 1-2 lines.]
+- **Evening (Time):** [Activity description in 1-2 lines. Show more than 1 activities here, mostly the ones very near by.]
 - **Night (Time):** [Activity description in 1-2 lines + suggest to have dinner [Meal suggestion here, like "at a local restaurant" or "at your hotel."]]
-(one line gap)
-Backup Options: (this should not be in bold, just suggest these 1 - 2 options for each day right below the night activity)
+- **Backup Options:** (this should not be in bold, just suggest these 1 - 2 options for each day right below the night activity)
 (I want you to give user some backup options for each day, like if they want to skip an activity, they can do this instead, 
 so give them some backup options for each day, like 2-3 activities per day as backup + a minimum of 3 activities laid out in itinerary schedule, 
 so that they can choose what they want to do, give these backup options with the same time slots as the main activities, so that they can choose what they want to do
@@ -352,8 +505,11 @@ make sure the backup option is not suggested as activity for following days, let
 eg. If I am suggested to visit abc museum with a backup of xyz park/ anything else, that xyz park & abc museum should not be suggested in the following days.)
 
 (Continue for all days of the trip)
+For each day, ensure you have a minimum of 3 main activities if they are far away & 4 to 5 if the activities are close and 1-2 backup options, all with specific time slots.
+**It is important and necessary to show approximate time travel time between each activity or the distance, so that the user can plan their day accordingly.**
 
 ------------------------------------------------------------------------
+
 **Service Provider Details**
 (This is a subtitle, make the font bold and most importantly show all the details you have about these service providers, including their contact information, website, city they operate in, and any other available information.)
 
