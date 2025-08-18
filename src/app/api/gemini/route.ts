@@ -474,7 +474,8 @@ STRICTLY FORBIDDEN: Never mix locations from distant clusters on the same day. F
 A short distance (< 1.5 km) means "schedule these attractions back-to-back." This is not a suggestion; it is a command.
 Opening hours are absolute. An attraction that opens at 10:00 AM cannot be scheduled for 9:00 AM.
 You must state the travel time between each location in the final itinerary.
-
+5. MUST MENTION STARTING POINT/ CITY (PICKUP CITY): Always start the itinerary with the intercity travel suggestion, like "Take a train from Pune to Mumbai, it will take around 3 hours, etc." or "Touch down to xyz airport/ railway station/ bus stop from (mention user's pickup city compulsorily)."
+This gives user a clear starting point and personalized feel to the itinerary. Very very important, do not forget to start the itinerary with intercity travel suggestion.
 
 **USER TRIP DETAILS:**
 ${JSON.stringify(responses, null, 2)}
