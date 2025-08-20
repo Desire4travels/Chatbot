@@ -87,6 +87,53 @@ body {
 .nav-logo span {
   font-family: serif !important;
 }
+.nav-link {
+  color: white;
+  text-decoration: none;
+  font-size: 14px;
+  letter-spacing: 1px;
+  font-weight: 300;
+  text-transform: uppercase;
+  transition: color 0.3s;
+  text-align: center;
+}
+
+.nav-link:hover {
+  color: blue;
+}
+
+
+.customHeader {
+  width: 100vw;
+  background: linear-gradient(to right, #0F172A, #5B76D6);
+  padding-top: 4rem;
+  padding-bottom: 1rem;
+  color: white;
+  text-align: center;
+}
+
+.headerContent {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+
+.headerTitle {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .headerTitle {
+    font-size: 3rem;
+  }
+}
+
+.headerSubtitle {
+  font-size: 1.25rem;
+}
 
 
 
@@ -156,7 +203,7 @@ body {
   color: #6b7280;
   text-align: center;
   margin-bottom: 2rem;
-  margin-top: 5rem;
+  margin-top: 2rem;
   /* or adjust as needed */
 }
 
@@ -612,8 +659,28 @@ body {
     margin-right: 6px;
   }
 }
+@media (max-width: 599px) {
 
+  .button,
+  .button.secondary {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.3rem;
+    width: 50%;
+    /* min-width: unset; */
+    margin-bottom: 0.5rem;
+  }
+}
+@media (max-width: 400px) {
 
+  .button,
+  .button.secondary {
+    font-size: 0.65rem;
+    padding: 0.4rem 0.6rem;
+    /* width: 100%; */
+    /* min-width: unset; */
+    margin-bottom: 0.5rem;
+  }
+}
 
 
 
@@ -743,16 +810,11 @@ body {
   }
 
   .itinerary-box {
-    font-size: 0.2rem;
+    font-size: 0.5rem;
   }
   
 }
-@media (max-width: 400px){
-  .itinerary-box {
-    font-size: 0.4rem;
-  }
 
-  }
 
 
 
@@ -784,6 +846,11 @@ body {
   html, body {
     font-size: 15px;
   }
+  .itinerary-box {
+    font-size: 0.7rem;
+    padding: 0.4rem;
+     max-height: 600px;
+  }
   .main-container {
     padding: 0.5rem 0.2rem;
   }
@@ -808,11 +875,15 @@ body {
     padding: 0.7rem;
     max-width: 99vw;
     font-size: 0.97rem;
+  }.result-card h2{
+    font-size: 1.4rem;
   }
-  .summary-card h2,
-  .result-card h2 {
+  .summary-card h2
+   {
     font-size: 1.1rem;
+    margin-bottom: 0rem;
   }
+  
   .summary-list,
   .summary-item {
     font-size: 0.97rem;
@@ -830,7 +901,7 @@ body {
   .button.secondary {
     font-size: 0.95rem;
     padding: 0.6rem 0.8rem;
-    width: 100%;
+    width: 40%;
     min-width: unset;
     margin-bottom: 0.5rem;
   }
@@ -849,14 +920,28 @@ body {
   }
 }
 
+@media (max-width: 600px){
+  .itinerary-box {
+    font-size: 0.9rem;
+    padding: 0.5rem;
+     max-height: 500px;
+  }
+}
+
 /* Smallest screens */
 @media (max-width: 400px) {
   html, body {
     font-size: 17px;
   }
+ 
+.result-card h2 {
+  margin-bottom: 0rem;
+
+  }
 .itinerary-box {
-    font-size: 0.5rem;
+    font-size: 0.7rem;
     padding: 0.4rem;
+     max-height: 400px;
   }
   .button {
    padding: 0.75rem 0.5rem;
@@ -909,3 +994,18 @@ body {
     padding: 0.5rem;
   }
 }
+
+
+.button-container {
+  display: flex;
+  justify-content: center; /* centers horizontally */
+  margin-top: 20px; /* optional spacing */
+}
+
+.button {
+  padding: 10px 20px;
+  font-size: 16px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+

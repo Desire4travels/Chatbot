@@ -46,9 +46,18 @@ const questions: string[] = [
 const optionsMap: Record<number, string[] | null> = {
   4: ["Round Trip", "One Way"],
   6: ["Camping", "Hotel", "Resorts", "Homestays"],
-  7: ["Private Cab", "Shared Vehicle", "Self-drive", "Public Transport"],
+  7: [
+    "Private Cab",
+    "Shared Vehicle",
+    "Self-drive",
+    "Public Transport",
+    "Railway",
+    "Bus",
+    "Flight",
+  ],
   8: ["Relax/Leisure", "Adventure", "Pilgrimage", "Couple"],
 };
+
 
 const isMultiSelect = (index: number) => [6, 7, 8].includes(index);
 const isSingleChoice = (index: number) => [4].includes(index);
@@ -69,6 +78,7 @@ export default function Home() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [showCopySuccess, setShowCopySuccess] = useState(false);
   const [showCopyModal, setShowCopyModal] = useState(false);
+  const [isReviewMode, setIsReviewMode] = useState(false);
   const itineraryRef = useRef<HTMLDivElement>(null);
   const itineraryModalRef = useRef<HTMLDivElement>(null);
 
@@ -161,6 +171,12 @@ export default function Home() {
     setStep(step + 1);
     setMessage("");
     setError("");
+
+    // Add this in handleNext function
+if (step === questions.length - 1) {
+  setIsReviewMode(true);
+}
+
   };
 
   const handleBack = () => {
@@ -266,7 +282,7 @@ export default function Home() {
     adults: 0,
     kids: 0,
     seniors: 0,
-  };
+  };      
 
   // Save itinerary handler (simulate API call)
   const handleSaveItinerary = async () => {
@@ -312,30 +328,49 @@ export default function Home() {
 
   return (
     <main className="main-container">
-      <header className="nav">
-        <div className="nav-logo">
-          <a href="https://desire4travels.com/">
-            Desire<span>4</span>Travels
-          </a>
-        </div>
-      </header>
 
-      {/* <h1 className="main-heading">🌍 Trip Planner Assistant</h1> */}
-      <p className="sub-heading">
-        In few simple steps get a perfectly planned itinerary for your dream
-        trip
-      </p>
-      <div className="progress-container">
-        <div className="progress-bar-outer">
-          <div
-            className="progress-bar-inner"
-            style={{ width: `${progressPercent}%` }}
-          >
-            <span className="progress-float-label">{progressPercent}%</span>
-          </div>
+      <header className="nav">
+  <div className="nav-logo">
+    <a href="https://desire4travels.com/">
+      Desire<span>4</span>Travels
+    </a>
+  </div>
+
+  <div className="nav-links">
+    <a href="https://desire4travels.com/" className="nav-link">Contact Us</a>
+  </div>
+</header>
+
+
+
+      <header className="customHeader">
+  <div className="headerContent">
+    <h5 className="headerTitle">Plan Your Trip</h5>
+  </div>
+</header>
+
+
+      {!isReviewMode && (
+  <>
+    {/* <h1 className="main-heading">🌍 Trip Planner Assistant</h1> */}
+    <p className="sub-heading">
+      In few simple steps get a perfectly planned itinerary for your dream
+      trip
+    </p>
+    <div className="progress-container">
+      <div className="progress-bar-outer">
+        <div
+          className="progress-bar-inner"
+          style={{ width: `${progressPercent}%` }}
+        >
+          <span className="progress-float-label">{progressPercent}%</span>
         </div>
-        <div className="progress-subtext">Trip Planning Progress</div>
       </div>
+      <div className="progress-subtext">Trip Planning Progress</div>
+    </div>
+  </>
+)}
+
 
       <div className="animated-bg"></div>
 
@@ -1028,9 +1063,12 @@ export default function Home() {
             <ReactMarkdown>{itinerary}</ReactMarkdown>
           </div>
 
-          <button className="button" onClick={handleBackToStart}>
-            🔄 Plan Another Trip
-          </button>
+        <div className="button-container">
+  <button className="button" onClick={handleBackToStart}>
+    🔄 Plan Another Trip
+  </button>
+</div>
+
         </div>
       )}
 
@@ -1109,12 +1147,12 @@ export default function Home() {
                     await navigator.clipboard.writeText(text);
                     setShowCopyModal(false);
                     setShowCopySuccess(true); // show success message
-                    setTimeout(() => setShowCopySuccess(false), 2500);
+                    setTimeout(() => setShowCopySuccess(false), 30000);
                   }
                 }}
               >
                 📋 Copy Itinerary
-              </button>
+              </button>                  
               <button
                 className="button secondary"
                 onClick={() => setShowCopyModal(false)}
