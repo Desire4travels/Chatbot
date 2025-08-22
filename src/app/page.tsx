@@ -58,7 +58,6 @@ const optionsMap: Record<number, string[] | null> = {
   8: ["Relax/Leisure", "Adventure", "Pilgrimage", "Couple"],
 };
 
-
 const isMultiSelect = (index: number) => [6, 7, 8].includes(index);
 const isSingleChoice = (index: number) => [4].includes(index);
 
@@ -173,10 +172,9 @@ export default function Home() {
     setError("");
 
     // Add this in handleNext function
-if (step === questions.length - 1) {
-  setIsReviewMode(true);
-}
-
+    if (step === questions.length - 1) {
+      setIsReviewMode(true);
+    }
   };
 
   const handleBack = () => {
@@ -282,7 +280,7 @@ if (step === questions.length - 1) {
     adults: 0,
     kids: 0,
     seniors: 0,
-  };      
+  };
 
   // Save itinerary handler (simulate API call)
   const handleSaveItinerary = async () => {
@@ -327,842 +325,853 @@ if (step === questions.length - 1) {
   };
 
   return (
-    <main className="main-container">
+    <>
+      <main className="main-container">
+        <header className="nav">
+          <div className="nav-logo">
+            <a href="https://desire4travels.com/">
+              Desire<span>4</span>Travels
+            </a>
+          </div>
 
-      <header className="nav">
-  <div className="nav-logo">
-    <a href="https://desire4travels.com/">
-      Desire<span>4</span>Travels
-    </a>
-  </div>
+          <div className="nav-links">
+            <a href="https://desire4travels.com/" className="nav-link">
+              Contact Us
+            </a>
+          </div>
+        </header>
 
-  <div className="nav-links">
-    <a href="https://desire4travels.com/" className="nav-link">Contact Us</a>
-  </div>
-</header>
+        <header className="customHeader">
+          <div className="headerContent">
+            <h5 className="headerTitle">Plan Your Trip</h5>
+          </div>
+        </header>
 
+        {!isReviewMode && (
+          <>
+            {/* <h1 className="main-heading">🌍 Trip Planner Assistant</h1> */}
+            <p className="sub-heading">
+              In few simple steps get a perfectly planned itinerary for your
+              dream trip
+            </p>
+            <div className="progress-container">
+              <div className="progress-bar-outer">
+                <div
+                  className="progress-bar-inner"
+                  style={{ width: `${progressPercent}%` }}
+                >
+                  <span className="progress-float-label">
+                    {progressPercent}%
+                  </span>
+                </div>
+              </div>
+              <div className="progress-subtext">Trip Planning Progress</div>
+            </div>
+          </>
+        )}
 
+        <div className="animated-bg"></div>
 
-      <header className="customHeader">
-  <div className="headerContent">
-    <h5 className="headerTitle">Plan Your Trip</h5>
-  </div>
-</header>
+        {/* Simple Loader */}
+        {loading && (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              margin: "2rem 0",
+            }}
+          >
+            <div className="simple-loader" />
+            <span style={{ marginLeft: "12px", fontWeight: 500 }}>
+              Generating...
+            </span>
+          </div>
+        )}
 
+        {/* Question UI */}
+        {step < questions.length && (
+          <div className="question-card">
+            <p className="question">{questions[step]}</p>
 
-      {!isReviewMode && (
-  <>
-    {/* <h1 className="main-heading">🌍 Trip Planner Assistant</h1> */}
-    <p className="sub-heading">
-      In few simple steps get a perfectly planned itinerary for your dream
-      trip
-    </p>
-    <div className="progress-container">
-      <div className="progress-bar-outer">
-        <div
-          className="progress-bar-inner"
-          style={{ width: `${progressPercent}%` }}
-        >
-          <span className="progress-float-label">{progressPercent}%</span>
-        </div>
-      </div>
-      <div className="progress-subtext">Trip Planning Progress</div>
-    </div>
-  </>
-)}
-
-
-      <div className="animated-bg"></div>
-
-      {/* Simple Loader */}
-      {loading && (
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            margin: "2rem 0",
-          }}
-        >
-          <div className="simple-loader" />
-          <span style={{ marginLeft: "12px", fontWeight: 500 }}>
-            Generating...
-          </span>
-        </div>
-      )}
-
-      {/* Question UI */}
-      {step < questions.length && (
-        <div className="question-card">
-          <p className="question">{questions[step]}</p>
-
-          {/* Step 0 - Custom Counter */}
-          {step === 0 && (
-            <div className="center-content">
-              <div className="counter-group">
-                {["adults", "kids", "seniors"].map((category) => (
-                  <div key={category} className="counter">
-                    <label className="counter-label">
-                      {category.charAt(0).toUpperCase() + category.slice(1)}
-                    </label>
-                    <div className="counter-controls">
-                      <button
-                        className="counter-btn"
-                        onClick={() =>
-                          setResponses((prev) => ({
-                            ...prev,
-                            0: {
-                              ...(prev[0 as keyof StepResponses] as Travelers),
-                              [category as keyof Travelers]: Math.max(
-                                0,
-                                ((
-                                  prev[0 as keyof StepResponses] as Travelers
-                                )?.[category as keyof Travelers] || 0) - 1
-                              ),
-                            },
-                          }))
-                        }
-                      >
-                        ➖
-                      </button>
-                      <span className="counter-value">
-                        {traveler[category as keyof Travelers]}
-                      </span>
-                      <button
-                        className="counter-btn"
-                        onClick={() =>
-                          setResponses((prev) => ({
-                            ...prev,
-                            0: {
-                              ...(prev[0 as keyof StepResponses] as Travelers),
-                              [category as keyof Travelers]:
-                                ((
-                                  prev[0 as keyof StepResponses] as Travelers
-                                )?.[category as keyof Travelers] || 0) + 1,
-                            },
-                          }))
-                        }
-                      >
-                        ➕
-                      </button>
+            {/* Step 0 - Custom Counter */}
+            {step === 0 && (
+              <div className="center-content">
+                <div className="counter-group">
+                  {["adults", "kids", "seniors"].map((category) => (
+                    <div key={category} className="counter">
+                      <label className="counter-label">
+                        {category.charAt(0).toUpperCase() + category.slice(1)}
+                      </label>
+                      <div className="counter-controls">
+                        <button
+                          className="counter-btn"
+                          onClick={() =>
+                            setResponses((prev) => ({
+                              ...prev,
+                              0: {
+                                ...(prev[
+                                  0 as keyof StepResponses
+                                ] as Travelers),
+                                [category as keyof Travelers]: Math.max(
+                                  0,
+                                  ((
+                                    prev[0 as keyof StepResponses] as Travelers
+                                  )?.[category as keyof Travelers] || 0) - 1
+                                ),
+                              },
+                            }))
+                          }
+                        >
+                          ➖
+                        </button>
+                        <span className="counter-value">
+                          {traveler[category as keyof Travelers]}
+                        </span>
+                        <button
+                          className="counter-btn"
+                          onClick={() =>
+                            setResponses((prev) => ({
+                              ...prev,
+                              0: {
+                                ...(prev[
+                                  0 as keyof StepResponses
+                                ] as Travelers),
+                                [category as keyof Travelers]:
+                                  ((
+                                    prev[0 as keyof StepResponses] as Travelers
+                                  )?.[category as keyof Travelers] || 0) + 1,
+                              },
+                            }))
+                          }
+                        >
+                          ➕
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Step 3 - Cities */}
-          {step === 3 && (
-            <div>
-              {cityList.map((city, idx) => (
-                <input
-                  key={idx}
-                  className="input"
-                  value={city}
-                  onChange={(e) => {
-                    const newCities = [...cityList];
-                    newCities[idx] = e.target.value;
-                    setCityList(newCities);
-                  }}
-                  placeholder={`City ${idx + 1}`}
-                />
-              ))}
-              <button
-                className="button secondary"
-                onClick={() => setCityList([...cityList, ""])}
-              >
-                + Add another city
-              </button>
-            </div>
-          )}
-
-          {/* Step 4 - Radio Options */}
-          {isSingleChoice(step) && (
-            <div className="center-content">
-              <div className="option-group small">
-                {optionsMap[step]?.map((opt) => (
-                  <label
-                    key={opt}
-                    className={`option small  ${
-                      responses[step as keyof StepResponses] === opt
-                        ? "selected"
-                        : ""
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      value={opt}
-                      name={`question-${step}`}
-                      checked={responses[step as keyof StepResponses] === opt}
-                      onChange={() =>
-                        setResponses({ ...responses, [step]: opt })
-                      }
-                      hidden
-                    />
-                    <span>{opt}</span>
-                  </label>
+            {/* Step 3 - Cities */}
+            {step === 3 && (
+              <div>
+                {cityList.map((city, idx) => (
+                  <input
+                    key={idx}
+                    className="input"
+                    value={city}
+                    onChange={(e) => {
+                      const newCities = [...cityList];
+                      newCities[idx] = e.target.value;
+                      setCityList(newCities);
+                    }}
+                    placeholder={`City ${idx + 1}`}
+                  />
                 ))}
+                <button
+                  className="button secondary"
+                  onClick={() => setCityList([...cityList, ""])}
+                >
+                  + Add another city
+                </button>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Step 6–8 - Multi-select */}
-          {isMultiSelect(step) && (
-            <div className="center-content">
-              <div className="option-group small">
-                {optionsMap[step]?.map((opt) => {
-                  const selected =
-                    (responses[step as keyof StepResponses] as
-                      | string[]
-                      | undefined) ?? [];
-                  return (
+            {/* Step 4 - Radio Options */}
+            {isSingleChoice(step) && (
+              <div className="center-content">
+                <div className="option-group small">
+                  {optionsMap[step]?.map((opt) => (
                     <label
                       key={opt}
-                      className={`option ${
-                        selected.includes(opt) ? "selected" : ""
+                      className={`option small  ${
+                        responses[step as keyof StepResponses] === opt
+                          ? "selected"
+                          : ""
                       }`}
                     >
                       <input
-                        type="checkbox"
+                        type="radio"
                         value={opt}
-                        checked={selected.includes(opt)}
-                        onChange={() => handleMultiSelect(opt)}
+                        name={`question-${step}`}
+                        checked={responses[step as keyof StepResponses] === opt}
+                        onChange={() =>
+                          setResponses({ ...responses, [step]: opt })
+                        }
                         hidden
                       />
                       <span>{opt}</span>
                     </label>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Step 5 - Days/Nights input */}
-          {step === 5 && (
-            <div className="center-content">
-              <div style={{ display: "flex", gap: "5rem" }}>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                  }}
-                >
-                  <label>Days</label>
-                  <input
-                    type="number"
-                    className="input"
-                    style={{ width: "80px" }}
-                    value={
-                      (
-                        responses[5 as keyof StepResponses] as {
-                          days: number;
-                          nights: number;
-                        }
-                      )?.days ?? 0
-                    }
-                    onChange={(e) => {
-                      const newDays = Number(e.target.value);
-                      setResponses({
-                        ...responses,
-                        5: {
-                          days: newDays,
-                          nights: Math.max(0, newDays - 1),
-                        },
-                      });
+            {/* Step 6–8 - Multi-select */}
+            {isMultiSelect(step) && (
+              <div className="center-content">
+                <div className="option-group small">
+                  {optionsMap[step]?.map((opt) => {
+                    const selected =
+                      (responses[step as keyof StepResponses] as
+                        | string[]
+                        | undefined) ?? [];
+                    return (
+                      <label
+                        key={opt}
+                        className={`option ${
+                          selected.includes(opt) ? "selected" : ""
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          value={opt}
+                          checked={selected.includes(opt)}
+                          onChange={() => handleMultiSelect(opt)}
+                          hidden
+                        />
+                        <span>{opt}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Step 5 - Days/Nights input */}
+            {step === 5 && (
+              <div className="center-content">
+                <div style={{ display: "flex", gap: "5rem" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
                     }}
-                    min={0}
-                  />
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                  }}
-                >
-                  <label>Nights</label>
-                  <input
-                    type="number"
-                    className="input"
-                    style={{ width: "80px" }}
-                    value={
-                      (
-                        responses[5 as keyof StepResponses] as {
-                          days: number;
-                          nights: number;
-                        }
-                      )?.nights ?? 0
-                    }
-                    onChange={(e) =>
-                      setResponses({
-                        ...responses,
-                        5: {
-                          days:
-                            (responses[5 as keyof StepResponses] as any)
-                              ?.days ?? 0,
-                          nights: Number(e.target.value),
-                        },
-                      })
-                    }
-                    min={0}
-                  />
+                  >
+                    <label>Days</label>
+                    <input
+                      type="number"
+                      className="input"
+                      style={{ width: "80px" }}
+                      value={
+                        (
+                          responses[5 as keyof StepResponses] as {
+                            days: number;
+                            nights: number;
+                          }
+                        )?.days ?? 0
+                      }
+                      onChange={(e) => {
+                        const newDays = Number(e.target.value);
+                        setResponses({
+                          ...responses,
+                          5: {
+                            days: newDays,
+                            nights: Math.max(0, newDays - 1),
+                          },
+                        });
+                      }}
+                      min={0}
+                    />
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                    }}
+                  >
+                    <label>Nights</label>
+                    <input
+                      type="number"
+                      className="input"
+                      style={{ width: "80px" }}
+                      value={
+                        (
+                          responses[5 as keyof StepResponses] as {
+                            days: number;
+                            nights: number;
+                          }
+                        )?.nights ?? 0
+                      }
+                      onChange={(e) =>
+                        setResponses({
+                          ...responses,
+                          5: {
+                            days:
+                              (responses[5 as keyof StepResponses] as any)
+                                ?.days ?? 0,
+                            nights: Number(e.target.value),
+                          },
+                        })
+                      }
+                      min={0}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Text/number input for steps 1, 2, 9, 10, 11 */}
-          {![0, 3, 4, 5, 6, 7, 8].includes(step) && (
-            <div className="center-content">
-              {step === 1 ? (
-                <input
-                  type="date"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  className="input"
-                />
-              ) : step === 9 ? (
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                  }}
-                >
+            {/* Text/number input for steps 1, 2, 9, 10, 11 */}
+            {![0, 3, 4, 5, 6, 7, 8].includes(step) && (
+              <div className="center-content">
+                {step === 1 ? (
+                  <input
+                    type="date"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    className="input"
+                  />
+                ) : step === 9 ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                    }}
+                  >
+                    <input
+                      type="text"
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      placeholder="Type your answer"
+                      className="input"
+                      style={{ flex: 1 }}
+                    />
+                    <span style={{ fontWeight: 500, color: "#6a8dff" }}>
+                      INR
+                    </span>
+                  </div>
+                ) : (
                   <input
                     type="text"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="Type your answer"
                     className="input"
-                    style={{ flex: 1 }}
                   />
-                  <span style={{ fontWeight: 500, color: "#6a8dff" }}>INR</span>
-                </div>
-              ) : (
-                <input
-                  type="text"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Type your answer"
-                  className="input"
-                />
-              )}
-            </div>
-          )}
-
-          <div className="button-row">
-            {step > 0 && (
-              <button className="button secondary" onClick={handleBack}>
-                ⬅️ Back
-              </button>
+                )}
+              </div>
             )}
-            <button
-              className="button"
-              onClick={handleNext}
-              disabled={loading || !isStepValid()}
-            >
-              {step === questions.length - 1 ? "Review & Generate" : "Next ➡️"}
-            </button>
+
+            <div className="button-row">
+              {step > 0 && (
+                <button className="button secondary" onClick={handleBack}>
+                  ⬅️ Back
+                </button>
+              )}
+              <button
+                className="button"
+                onClick={handleNext}
+                disabled={loading || !isStepValid()}
+              >
+                {step === questions.length - 1
+                  ? "Review & Generate"
+                  : "Next ➡️"}
+              </button>
+            </div>
+
+            {error && <p className="error">{error}</p>}
           </div>
+        )}
 
-          {error && <p className="error">{error}</p>}
-        </div>
-      )}
-
-      {/* Review Page */}
-      {step === questions.length && !itinerary && !loading && (
-        <div className="summary-card">
-          <h2>
-            📋 {isEditingAll ? "Edit Your Answers" : "Review Your Answers"}
-          </h2>
-          <ul className="summary-list">
-            {Object.entries(responses).map(([key, value]) => {
-              const stepIndex = Number(key);
-              const question = questions[stepIndex];
-              return (
-                <li key={key} className="summary-item">
-                  <strong>{question}</strong>:{" "}
-                  {isEditingAll ? (
-                    isSingleChoice(stepIndex) ? (
-                      // Step 4: Single choice (radio)
-                      <div className="option-group small">
-                        {optionsMap[stepIndex]?.map((opt) => (
-                          <label
-                            key={opt}
-                            className={`option ${
-                              responses[stepIndex as keyof StepResponses] ===
-                              opt
-                                ? "selected"
-                                : ""
-                            }`}
-                          >
-                            <input
-                              type="radio"
-                              value={opt}
-                              name={`edit-question-${stepIndex}`}
-                              checked={
-                                responses[stepIndex as keyof StepResponses] ===
-                                opt
-                              }
-                              onChange={() =>
-                                setResponses((prev) => ({
-                                  ...prev,
-                                  [stepIndex]: opt,
-                                }))
-                              }
-                              hidden
-                            />
-                            <span>{opt}</span>
-                          </label>
-                        ))}
-                      </div>
-                    ) : isMultiSelect(stepIndex) ? (
-                      // Step 6, 7, 8: Multi-select (checkbox)
-                      <div className="option-group small">
-                        {optionsMap[stepIndex]?.map((opt) => {
-                          const selected =
-                            (responses[stepIndex as keyof StepResponses] as
-                              | string[]
-                              | undefined) ?? [];
-                          return (
+        {/* Review Page */}
+        {step === questions.length && !itinerary && !loading && (
+          <div className="summary-card">
+            <h2>
+              📋 {isEditingAll ? "Edit Your Answers" : "Review Your Answers"}
+            </h2>
+            <ul className="summary-list">
+              {Object.entries(responses).map(([key, value]) => {
+                const stepIndex = Number(key);
+                const question = questions[stepIndex];
+                return (
+                  <li key={key} className="summary-item">
+                    <strong>{question}</strong>:{" "}
+                    {isEditingAll ? (
+                      isSingleChoice(stepIndex) ? (
+                        // Step 4: Single choice (radio)
+                        <div className="option-group small">
+                          {optionsMap[stepIndex]?.map((opt) => (
                             <label
                               key={opt}
-                              className={`option small  ${
-                                selected.includes(opt) ? "selected" : ""
+                              className={`option ${
+                                responses[stepIndex as keyof StepResponses] ===
+                                opt
+                                  ? "selected"
+                                  : ""
                               }`}
                             >
                               <input
-                                type="checkbox"
+                                type="radio"
                                 value={opt}
-                                checked={selected.includes(opt)}
-                                onChange={() => {
-                                  const newSelected = selected.includes(opt)
-                                    ? selected.filter((v) => v !== opt)
-                                    : [...selected, opt];
+                                name={`edit-question-${stepIndex}`}
+                                checked={
+                                  responses[
+                                    stepIndex as keyof StepResponses
+                                  ] === opt
+                                }
+                                onChange={() =>
                                   setResponses((prev) => ({
                                     ...prev,
-                                    [stepIndex]: newSelected,
-                                  }));
-                                }}
+                                    [stepIndex]: opt,
+                                  }))
+                                }
                                 hidden
                               />
                               <span>{opt}</span>
                             </label>
-                          );
-                        })}
-                      </div>
-                    ) : typeof value === "object" && value !== null ? (
-                      stepIndex === 0 ? (
-                        // Step 0: Travelers
-                        <div className="counter-group">
-                          {(["adults", "kids", "seniors"] as const).map(
-                            (category) => (
-                              <div key={category} className="counter">
-                                <label className="counter-label">
-                                  {category.charAt(0).toUpperCase() +
-                                    category.slice(1)}
-                                </label>
-                                <div className="counter-controls">
-                                  <button
-                                    className="counter-btn"
-                                    onClick={() =>
-                                      setResponses((prev) => ({
-                                        ...prev,
-                                        0: {
-                                          ...(prev[
-                                            0 as keyof StepResponses
-                                          ] as Travelers),
-                                          [category as keyof Travelers]:
-                                            Math.max(
-                                              0,
+                          ))}
+                        </div>
+                      ) : isMultiSelect(stepIndex) ? (
+                        // Step 6, 7, 8: Multi-select (checkbox)
+                        <div className="option-group small">
+                          {optionsMap[stepIndex]?.map((opt) => {
+                            const selected =
+                              (responses[stepIndex as keyof StepResponses] as
+                                | string[]
+                                | undefined) ?? [];
+                            return (
+                              <label
+                                key={opt}
+                                className={`option small  ${
+                                  selected.includes(opt) ? "selected" : ""
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  value={opt}
+                                  checked={selected.includes(opt)}
+                                  onChange={() => {
+                                    const newSelected = selected.includes(opt)
+                                      ? selected.filter((v) => v !== opt)
+                                      : [...selected, opt];
+                                    setResponses((prev) => ({
+                                      ...prev,
+                                      [stepIndex]: newSelected,
+                                    }));
+                                  }}
+                                  hidden
+                                />
+                                <span>{opt}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      ) : typeof value === "object" && value !== null ? (
+                        stepIndex === 0 ? (
+                          // Step 0: Travelers
+                          <div className="counter-group">
+                            {(["adults", "kids", "seniors"] as const).map(
+                              (category) => (
+                                <div key={category} className="counter">
+                                  <label className="counter-label">
+                                    {category.charAt(0).toUpperCase() +
+                                      category.slice(1)}
+                                  </label>
+                                  <div className="counter-controls">
+                                    <button
+                                      className="counter-btn"
+                                      onClick={() =>
+                                        setResponses((prev) => ({
+                                          ...prev,
+                                          0: {
+                                            ...(prev[
+                                              0 as keyof StepResponses
+                                            ] as Travelers),
+                                            [category as keyof Travelers]:
+                                              Math.max(
+                                                0,
+                                                ((
+                                                  prev[
+                                                    0 as keyof StepResponses
+                                                  ] as Travelers
+                                                )?.[
+                                                  category as keyof Travelers
+                                                ] || 0) - 1
+                                              ),
+                                          },
+                                        }))
+                                      }
+                                    >
+                                      ➖
+                                    </button>
+                                    <span className="counter-value">
+                                      {(
+                                        responses[
+                                          0 as keyof StepResponses
+                                        ] as Travelers
+                                      )?.[category] || 0}
+                                    </span>
+                                    <button
+                                      className="counter-btn"
+                                      onClick={() =>
+                                        setResponses((prev) => ({
+                                          ...prev,
+                                          0: {
+                                            ...(prev[
+                                              0 as keyof StepResponses
+                                            ] as Travelers),
+                                            [category as keyof Travelers]:
                                               ((
                                                 prev[
                                                   0 as keyof StepResponses
                                                 ] as Travelers
                                               )?.[
                                                 category as keyof Travelers
-                                              ] || 0) - 1
-                                            ),
-                                        },
-                                      }))
-                                    }
-                                  >
-                                    ➖
-                                  </button>
-                                  <span className="counter-value">
-                                    {(
-                                      responses[
-                                        0 as keyof StepResponses
-                                      ] as Travelers
-                                    )?.[category] || 0}
-                                  </span>
-                                  <button
-                                    className="counter-btn"
-                                    onClick={() =>
-                                      setResponses((prev) => ({
-                                        ...prev,
-                                        0: {
-                                          ...(prev[
-                                            0 as keyof StepResponses
-                                          ] as Travelers),
-                                          [category as keyof Travelers]:
-                                            ((
-                                              prev[
-                                                0 as keyof StepResponses
-                                              ] as Travelers
-                                            )?.[category as keyof Travelers] ||
-                                              0) + 1,
-                                        },
-                                      }))
-                                    }
-                                  >
-                                    ➕
-                                  </button>
-                                </div>
-                              </div>
-                            )
-                          )}
-                        </div>
-                      ) : stepIndex === 5 ? (
-                        // Step 5: Days/Nights
-                        <div style={{ display: "flex", gap: "2rem" }}>
-                          <div>
-                            <label>Days</label>
-                            <input
-                              className="input"
-                              type="number"
-                              min={0}
-                              value={
-                                (value as { days: number; nights: number }).days
-                              }
-                              onChange={(e) =>
-                                setResponses((prev) => ({
-                                  ...prev,
-                                  [stepIndex]: {
-                                    days: Number(e.target.value),
-                                    nights: Math.max(
-                                      0,
-                                      Number(e.target.value) - 1
-                                    ),
-                                  },
-                                }))
-                              }
-                            />
-                          </div>
-                          <div>
-                            <label>Nights</label>
-                            <input
-                              className="input"
-                              type="number"
-                              min={0}
-                              value={
-                                (value as { days: number; nights: number })
-                                  .nights
-                              }
-                              onChange={(e) =>
-                                setResponses((prev) => ({
-                                  ...prev,
-                                  [stepIndex]: {
-                                    days: (
-                                      value as {
-                                        days: number;
-                                        nights: number;
+                                              ] || 0) + 1,
+                                          },
+                                        }))
                                       }
-                                    ).days,
-                                    nights: Number(e.target.value),
-                                  },
-                                }))
-                              }
-                            />
+                                    >
+                                      ➕
+                                    </button>
+                                  </div>
+                                </div>
+                              )
+                            )}
                           </div>
+                        ) : stepIndex === 5 ? (
+                          // Step 5: Days/Nights
+                          <div style={{ display: "flex", gap: "2rem" }}>
+                            <div>
+                              <label>Days</label>
+                              <input
+                                className="input"
+                                type="number"
+                                min={0}
+                                value={
+                                  (value as { days: number; nights: number })
+                                    .days
+                                }
+                                onChange={(e) =>
+                                  setResponses((prev) => ({
+                                    ...prev,
+                                    [stepIndex]: {
+                                      days: Number(e.target.value),
+                                      nights: Math.max(
+                                        0,
+                                        Number(e.target.value) - 1
+                                      ),
+                                    },
+                                  }))
+                                }
+                              />
+                            </div>
+                            <div>
+                              <label>Nights</label>
+                              <input
+                                className="input"
+                                type="number"
+                                min={0}
+                                value={
+                                  (value as { days: number; nights: number })
+                                    .nights
+                                }
+                                onChange={(e) =>
+                                  setResponses((prev) => ({
+                                    ...prev,
+                                    [stepIndex]: {
+                                      days: (
+                                        value as {
+                                          days: number;
+                                          nights: number;
+                                        }
+                                      ).days,
+                                      nights: Number(e.target.value),
+                                    },
+                                  }))
+                                }
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          // Fallback object editor
+                          <input
+                            className="input"
+                            type="text"
+                            value={Object.entries(value)
+                              .map(([k, v]) => `${k}:${v}`)
+                              .join(", ")}
+                            onChange={(e) => {
+                              const obj: any = {};
+                              e.target.value.split(",").forEach((pair) => {
+                                const [k, v] = pair
+                                  .split(":")
+                                  .map((x) => x.trim());
+                                obj[k] = isNaN(Number(v)) ? v : Number(v);
+                              });
+                              setResponses((prev) => ({
+                                ...prev,
+                                [stepIndex]: obj,
+                              }));
+                            }}
+                          />
+                        )
+                      ) : Array.isArray(value) ? (
+                        // Step 3: City list
+                        <div>
+                          {cityList.map((city, idx) => (
+                            <input
+                              key={idx}
+                              className="input"
+                              value={city}
+                              onChange={(e) => {
+                                const newCities = [...cityList];
+                                newCities[idx] = e.target.value;
+                                setCityList(newCities);
+                              }}
+                              placeholder={`City ${idx + 1}`}
+                            />
+                          ))}
+                          <button
+                            className="button secondary"
+                            onClick={() => setCityList([...cityList, ""])}
+                          >
+                            + Add another city
+                          </button>
                         </div>
                       ) : (
-                        // Fallback object editor
+                        // Text or number input fallback
                         <input
                           className="input"
-                          type="text"
-                          value={Object.entries(value)
-                            .map(([k, v]) => `${k}:${v}`)
-                            .join(", ")}
-                          onChange={(e) => {
-                            const obj: any = {};
-                            e.target.value.split(",").forEach((pair) => {
-                              const [k, v] = pair
-                                .split(":")
-                                .map((x) => x.trim());
-                              obj[k] = isNaN(Number(v)) ? v : Number(v);
-                            });
+                          type={typeof value === "number" ? "number" : "text"}
+                          value={value}
+                          onChange={(e) =>
                             setResponses((prev) => ({
                               ...prev,
-                              [stepIndex]: obj,
-                            }));
-                          }}
+                              [stepIndex]:
+                                typeof value === "number"
+                                  ? Number(e.target.value)
+                                  : e.target.value,
+                            }))
+                          }
                         />
                       )
-                    ) : Array.isArray(value) ? (
-                      // Step 3: City list
-                      <div>
-                        {cityList.map((city, idx) => (
-                          <input
-                            key={idx}
-                            className="input"
-                            value={city}
-                            onChange={(e) => {
-                              const newCities = [...cityList];
-                              newCities[idx] = e.target.value;
-                              setCityList(newCities);
-                            }}
-                            placeholder={`City ${idx + 1}`}
-                          />
-                        ))}
-                        <button
-                          className="button secondary"
-                          onClick={() => setCityList([...cityList, ""])}
-                        >
-                          + Add another city
-                        </button>
-                      </div>
                     ) : (
-                      // Text or number input fallback
-                      <input
-                        className="input"
-                        type={typeof value === "number" ? "number" : "text"}
-                        value={value}
-                        onChange={(e) =>
-                          setResponses((prev) => ({
-                            ...prev,
-                            [stepIndex]:
-                              typeof value === "number"
-                                ? Number(e.target.value)
-                                : e.target.value,
-                          }))
-                        }
-                      />
-                    )
-                  ) : (
-                    <span>
-                      {Array.isArray(value)
-                        ? value.join(", ")
-                        : typeof value === "object" && value !== null
-                        ? Object.entries(value)
-                            .map(([k, v]) => `${k}: ${v}`)
-                            .join(", ")
-                        : String(value)}
-                    </span>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-          <div className="button-row">
-            {isEditingAll ? (
-              <>
-                <button
-                  className="button secondary"
-                  onClick={() => setIsEditingAll(false)}
-                >
-                  ❌ Cancel Edit
-                </button>
-                <button
-                  onClick={() => {
-                    setIsEditingAll(false);
-                    // The handleSubmit function now handles both creation and editing.
-                    handleSubmit();
-                  }}
-                  className="button"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <span className="loading-content">
-                      <img
-                        src="/Loader.gif"
-                        alt="Loading..."
-                        className="loading-gif"
-                      />
-                      Generating...
-                    </span>
-                  ) : (
-                    "✅ Save & Generate"
-                  )}
-                </button>
-              </>
-            ) : (
-              <>
-                {/* When entering edit mode */}
-                <button
-                  className="button secondary"
-                  onClick={() => {
-                    setIsEditingAll(true);
-                    syncCityListWithResponses();
-                  }}
-                >
-                  ✏️ Edit
-                </button>
+                      <span>
+                        {Array.isArray(value)
+                          ? value.join(", ")
+                          : typeof value === "object" && value !== null
+                          ? Object.entries(value)
+                              .map(([k, v]) => `${k}: ${v}`)
+                              .join(", ")
+                          : String(value)}
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="button-row">
+              {isEditingAll ? (
+                <>
+                  <button
+                    className="button secondary"
+                    onClick={() => setIsEditingAll(false)}
+                  >
+                    ❌ Cancel Edit
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsEditingAll(false);
+                      // The handleSubmit function now handles both creation and editing.
+                      handleSubmit();
+                    }}
+                    className="button"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <span className="loading-content">
+                        <img
+                          src="/Loader.gif"
+                          alt="Loading..."
+                          className="loading-gif"
+                        />
+                        Generating...
+                      </span>
+                    ) : (
+                      "✅ Save & Generate"
+                    )}
+                  </button>
+                </>
+              ) : (
+                <>
+                  {/* When entering edit mode */}
+                  <button
+                    className="button secondary"
+                    onClick={() => {
+                      setIsEditingAll(true);
+                      syncCityListWithResponses();
+                    }}
+                  >
+                    ✏️ Edit
+                  </button>
 
-                <button
-                  onClick={() => {
-                    setIsEditingAll(false);
-                    setResponses((prev) => ({
-                      ...prev,
-                      3: cityList.filter((c) => c.trim() !== ""),
-                    }));
+                  <button
+                    onClick={() => {
+                      setIsEditingAll(false);
+                      setResponses((prev) => ({
+                        ...prev,
+                        3: cityList.filter((c) => c.trim() !== ""),
+                      }));
 
-                    // Start loading
-                    setLoading(true);
+                      // Start loading
+                      setLoading(true);
 
-                    // Call your submit function
-                    handleSubmit();
+                      // Call your submit function
+                      handleSubmit();
 
-                    // Stop loading after 5 seconds
-                  }}
-                  className="button"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <span className="loading-content">
-                      <img
-                        src="/Loader.gif"
-                        alt="Loading..."
-                        className="loading-gif"
-                      />
-                      Generating...
-                    </span>
-                  ) : (
-                    "✅ Save & Generate"
-                  )}
-                </button>
-              </>
-            )}
-          </div>
-          {error && <p className="error">{error}</p>}
-        </div>
-      )}
-
-      {/* Itinerary Result */}
-      {itinerary && (
-        <div className="result-card">
-          <div className="result-card-header">
-            <h2>🗺️ Your Trip Itinerary</h2>
-            <button
-              className="button"
-              onClick={() => {
-                setShowCopyModal(true); // directly open copy modal
-                setShowSaveModal(false); // make sure contact modal never shows
-                setContactError("");
-                setSaveSuccess(false);
-              }}
-            >
-              Save this Itinerary
-            </button>
-          </div>
-
-          <div className="itinerary-box markdown-body" ref={itineraryRef}>
-            <ReactMarkdown>{itinerary}</ReactMarkdown>
-          </div>
-
-        <div className="button-container">
-  <button className="button" onClick={handleBackToStart}>
-    🔄 Plan Another Trip
-  </button>
-</div>
-
-        </div>
-      )}
-
-      {/* Save Modal */}
-      {showSaveModal && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <h3>Enter your 10-digit contact number</h3>
-            <input
-              className="input"
-              type="tel"
-              maxLength={10}
-              value={contactNumber}
-              onChange={(e) =>
-                setContactNumber(e.target.value.replace(/\D/g, ""))
-              }
-              placeholder="Contact Number"
-            />
-            {contactError && <p className="error">{contactError}</p>}
-
-            <div className="modal-actions">
-              <button className="button" onClick={handleSaveItinerary}>
-                Save
-              </button>
-              <button
-                className="button secondary"
-                onClick={() => setShowSaveModal(false)}
-              >
-                Cancel
-              </button>
+                      // Stop loading after 5 seconds
+                    }}
+                    className="button"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <span className="loading-content">
+                        <img
+                          src="/Loader.gif"
+                          alt="Loading..."
+                          className="loading-gif"
+                        />
+                        Generating...
+                      </span>
+                    ) : (
+                      "✅ Save & Generate"
+                    )}
+                  </button>
+                </>
+              )}
             </div>
+            {error && <p className="error">{error}</p>}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Copy Success Popup */}
-      {showCopySuccess && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <p>
-              ✅ Itinerary copied to clipboard!
-              <br />
-              Now you can paste this itinerary into <strong>
-                WhatsApp
-              </strong>{" "}
-              💬, a <strong>Word file</strong> 📄, or anywhere else from your{" "}
-              <strong>Clipboard</strong> 📋 for saving.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {showCopyModal && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <h3>Copy Your Itinerary</h3>
-            <div
-              className="itinerary-box"
-              style={{
-                maxHeight: 200,
-                overflowY: "auto",
-                marginBottom: "1rem",
-                fontSize: "0.75rem",
-              }}
-            >
-              <div ref={itineraryModalRef}>
-                <ReactMarkdown>{itinerary}</ReactMarkdown>
-              </div>
-            </div>
-            <div className="modal-actions">
+        {/* Itinerary Result */}
+        {itinerary && (
+          <div className="result-card">
+            <div className="result-card-header">
+              <h2>🗺️ Your Trip Itinerary</h2>
               <button
                 className="button"
-                onClick={async () => {
-                  if (itineraryModalRef.current) {
-                    const text = itineraryModalRef.current.innerText;
-                    await navigator.clipboard.writeText(text);
-                    setShowCopyModal(false);
-                    setShowCopySuccess(true); // show success message
-                    setTimeout(() => setShowCopySuccess(false), 30000);
-                  }
+                onClick={() => {
+                  setShowCopyModal(true); // directly open copy modal
+                  setShowSaveModal(false); // make sure contact modal never shows
+                  setContactError("");
+                  setSaveSuccess(false);
                 }}
               >
-                📋 Copy Itinerary
-              </button>                  
-              <button
-                className="button secondary"
-                onClick={() => setShowCopyModal(false)}
-              >
-                Close
+                Save this Itinerary
+              </button>
+            </div>
+
+            <div className="itinerary-box markdown-body" ref={itineraryRef}>
+              <ReactMarkdown>{itinerary}</ReactMarkdown>
+            </div>
+
+            <div className="button-container">
+              <button className="button" onClick={handleBackToStart}>
+                🔄 Plan Another Trip
               </button>
             </div>
           </div>
-        </div>
-      )}
-    </main>
+        )}
+
+        {/* Save Modal */}
+        {showSaveModal && (
+          <div className="modal-overlay">
+            <div className="modal">
+              <h3>Enter your 10-digit contact number</h3>
+              <input
+                className="input"
+                type="tel"
+                maxLength={10}
+                value={contactNumber}
+                onChange={(e) =>
+                  setContactNumber(e.target.value.replace(/\D/g, ""))
+                }
+                placeholder="Contact Number"
+              />
+              {contactError && <p className="error">{contactError}</p>}
+
+              <div className="modal-actions">
+                <button className="button" onClick={handleSaveItinerary}>
+                  Save
+                </button>
+                <button
+                  className="button secondary"
+                  onClick={() => setShowSaveModal(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Copy Success Popup */}
+        {showCopySuccess && (
+          <div className="modal-overlay">
+            <div className="modal">
+              <p>
+                ✅ Itinerary copied to clipboard!
+                <br />
+                Now you can paste this itinerary into <strong>
+                  WhatsApp
+                </strong>{" "}
+                💬, a <strong>Word file</strong> 📄, or anywhere else from your{" "}
+                <strong>Clipboard</strong> 📋 for saving.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {showCopyModal && (
+          <div className="modal-overlay">
+            <div className="modal">
+              <h3>Copy Your Itinerary</h3>
+              <div
+                className="itinerary-box"
+                style={{
+                  maxHeight: 200,
+                  overflowY: "auto",
+                  marginBottom: "1rem",
+                  fontSize: "0.75rem",
+                }}
+              >
+                <div ref={itineraryModalRef}>
+                  <ReactMarkdown>{itinerary}</ReactMarkdown>
+                </div>
+              </div>
+              <div className="modal-actions">
+                <button
+                  className="button"
+                  onClick={async () => {
+                    if (itineraryModalRef.current) {
+                      const text = itineraryModalRef.current.innerText;
+                      await navigator.clipboard.writeText(text);
+                      setShowCopyModal(false);
+                      setShowCopySuccess(true); // show success message
+                      setTimeout(() => setShowCopySuccess(false), 20000);
+                    }
+                  }}
+                >
+                  📋 Copy Itinerary
+                </button>
+                <button
+                  className="button secondary"
+                  onClick={() => setShowCopyModal(false)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+    </>
   );
 }
