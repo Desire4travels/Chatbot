@@ -474,8 +474,11 @@ STRICTLY FORBIDDEN: Never mix locations from distant clusters on the same day. F
 A short distance (< 1.5 km) means "schedule these attractions back-to-back." This is not a suggestion; it is a command.
 Opening hours are absolute. An attraction that opens at 10:00 AM cannot be scheduled for 9:00 AM.
 You must state the travel time between each location in the final itinerary.
-5. MUST MENTION STARTING POINT/ CITY (PICKUP CITY): Always start the itinerary with the intercity travel suggestion, like "Take a train from Pune to Mumbai, it will take around 3 hours, etc." or "Touch down to xyz airport/ railway station/ bus stop from (mention user's pickup city compulsorily)."
-This gives user a clear starting point and personalized feel to the itinerary. Very very important, do not forget to start the itinerary with intercity travel suggestion.
+5. MUST MENTION STARTING POINT/ CITY (PICKUP CITY) AND MODE OF TRANSPORT: Always start the itinerary with the intercity travel mention compulsorily, Eg. "Take (mode of transport user selects) from Pune to Mumbai, it will take around 3 hours, etc." or "Touch down to xyz airport/ railway station/ bus stop from (mention user's pickup city compulsorily)."
+This gives user a clear starting point and personalized feel to the itinerary. Very very important, do not forget to start the itinerary with intercity travel suggestion. Also compulsorily mention the appropriate travel time it might take with respect to the distance and mode of transport we are recommending.
+6. USER INPUT FOR MODE OF TRANSPORT: You will get one or more of these inputs for the choice of mode of transport: "Private Cab", "Shared Vehicle","Self-drive","Public Transport","Railway","Bus","Flight". For intercity travel, you will only recomment what the user has selected, but be smart while you do that -
+If the user has selected "Private Cab" and "Flight" for intercity travel, you will suggest "Take a flight from Pune to Mumbai, it will take around 1 hour, etc." and then suggest "For local travel in Mumbai, you can suggest Private Cab services."
+If the user has selected both "railway" or "bus" or "Flight", for intercity travel recommend the one which is most efficient with respect to distance, time and user's budget you also recieve as input.
 
 **USER TRIP DETAILS:**
 ${JSON.stringify(responses, null, 2)}
@@ -496,13 +499,13 @@ ${context}
 - **Morning (Time):** [Touch down to xyz airport/ railway station/ bus stop from (mention user's pickup city compulsorily). Check into hotel (if stay longer than 1 day), Have breakfast, 
   Activity description in 1-2 lines.]
 - **Afternoon (Time):** [Activity description in 1-2 lines + suggest to have lunch [Meal suggestion here, like "at a local restaurant" or "at your hotel."]]
-- **Evening (Time):** [Activity description in 1-2 lines. Show more than 1 activities here, mostly the ones very near by.]
+- **Evening (Time):** [Activity name, [time frame], description in 1-2 lines. Show more than 1 activities here in the same section with a seprate [time frame], specifically the ones very near by which should be covered in 1 day together.]
 - **Night (Time):** [Activity description in 1-2 lines + suggest to have dinner [Meal suggestion here, like "at a local restaurant" or "at your hotel."]]
 - **Backup Options:** (this should not be in bold, just suggest these 1 - 2 options for each day right below the night activity)
 (I want you to give user some backup options for each day, like if they want to skip an activity, they can do this instead, 
 so give them some backup options for each day, like 2-3 activities per day as backup + a minimum of 3 activities laid out in itinerary schedule, 
 so that they can choose what they want to do, give these backup options with the same time slots as the main activities, so that they can choose what they want to do
-make sure the backup option is not suggested as activity for following days, let the backups remain unique just like main itinerary.
+make sure the backup option is not suggested as activity for following days, let the backups remain unique just like main itinerary. Also recommend the timings for these backup options.
 eg. If I am suggested to visit abc museum with a backup of xyz park/ anything else, that xyz park & abc museum should not be suggested in the following days.)
 
 (Continue for all days of the trip)
