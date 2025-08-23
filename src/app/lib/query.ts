@@ -13,7 +13,7 @@ export async function queryServicesByCity(userText: string, pickupCity: string, 
         // Bus: Filter by pickup city AND all destination cities
         index.namespace('bus').query({
             vector: embedding,
-            topK: 50,
+            topK: 25,
             includeMetadata: true,
             filter: {
                 // The city can be the pickup city OR any of the destination cities
@@ -24,7 +24,7 @@ export async function queryServicesByCity(userText: string, pickupCity: string, 
         // Cab: Filter by any of the destination cities
         index.namespace('cab').query({
             vector: embedding,
-            topK: 50,
+            topK: 20,
             includeMetadata: true,
             filter: {
                 city: { $in: targetCities }
@@ -34,7 +34,7 @@ export async function queryServicesByCity(userText: string, pickupCity: string, 
         // Hotel: Filter by any of the destination cities
         index.namespace('hotel').query({
             vector: embedding,
-            topK: 50,
+            topK: 20,
             includeMetadata: true,
             filter: {
                 city: { $in: targetCities }
@@ -44,7 +44,7 @@ export async function queryServicesByCity(userText: string, pickupCity: string, 
         // Adventure: Filter by any of the destination cities
         index.namespace('adventure').query({
             vector: embedding,
-            topK: 50,
+            topK: 20,
             includeMetadata: true,
             filter: {
                 city: { $in: targetCities }
