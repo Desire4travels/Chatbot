@@ -495,8 +495,8 @@ ${context}
 
 **Itinerary**
 
-(Calculate the date for each day and display it before Day N in format [DD Mon] with abbreviated month name like Sep instead of 09, **DO NOT SHOW YEAR and compulsarily display [] square brackets around the date**)
-**[DD Mon] Day 1 - [Day 1 Theme]** (each day should have a minimum of 3 main activities/ travel locations)
+(Calculate the date for each day and display it before Day N in format [DD.MM] **DO NOT SHOW YEAR and compulsarily display [] square brackets around the date**)
+**[DD.MM] Day 1 - [Day 1 Theme]** (each day should have a minimum of 3 main activities/ travel locations)
 - **Morning (Time):** [Touch down to xyz airport/ railway station/ bus stop from (mention user's pickup city compulsorily). Check into hotel (if stay longer than 1 day), Have breakfast, 
   Activity description in 1-2 lines.]
 - **Afternoon (Time):** [Activity description in 1-2 lines + suggest to have lunch [Meal suggestion here, like "at a local restaurant" or "at your hotel."]]
@@ -598,5 +598,4 @@ If no vendors are found, write: “No specific vendors found.”
       { status: 500 }
     );
   }
-
 }
